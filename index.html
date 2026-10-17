@@ -51,7 +51,7 @@
         </div>
     </div>
 
-    <!-- ವಿಸ್ತೃತ ವಿವರಗಳ ಡ್ರಾಯರ್ (Detailed View Modal) -->
+    <!-- ವಿಸ್ತೃತ ವಿವರಗಳ ಡ್ರಾಯರ್ -->
     <div id="detail-drawer" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex justify-end flex-col">
         <div class="bg-white rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto space-y-4">
             <div class="flex justify-between items-center border-b pb-2">
@@ -105,13 +105,63 @@
 
         <!-- ಸೆಕ್ಷನ್ 3: ಡೆಲಿವರಿ ಬಾಯ್ಸ್ -->
         <div id="section-delivery" class="space-y-3 hidden">
-            <h3 class="font-bold text-xs text-gray-700">ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ಪಟ್ಟಿ:</h3>
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-xs text-gray-700">ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ಪಟ್ಟಿ:</h3>
+                <button type="button" onclick="openDeliveryRegModal()" class="bg-indigo-600 text-white px-3 py-1 rounded-lg text-xs font-bold cursor-pointer">+ ಹೊಸ ಡೆಲಿವರಿ ಬಾಯ್ ನೋಂದಣಿ</button>
+            </div>
             <div id="delivery-list-container" class="space-y-3 text-xs">
                 ಯಾವುದೇ ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ಇಲ್ಲ.
             </div>
         </div>
 
     </main>
+
+    <!-- ಡೆಲಿವರಿ ಬಾಯ್ ನೋಂದಣಿ ಪಾಪ್‌ಅಪ್ ಫಾರ್ಮ್ -->
+    <div id="delivery-reg-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-5 max-w-sm w-full space-y-3 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="font-bold text-sm text-indigo-700">🛵 ಹೊಸ ಡೆಲಿವರಿ ಬಾಯ್ ನೋಂದಣಿ</h3>
+                <button type="button" onclick="closeDeliveryRegModal()" class="text-red-500 font-bold text-base cursor-pointer">✕</button>
+            </div>
+            
+            <div class="space-y-2 text-xs">
+                <div>
+                    <label class="font-bold text-gray-700">ಡೆಲಿವರಿ ಬಾಯ್ ಹೆಸರು:</label>
+                    <input type="text" id="del-name" placeholder="ಹೆಸರು ನಮೂದಿಸಿ" class="w-full p-2 border rounded-lg mt-1">
+                </div>
+                <div>
+                    <label class="font-bold text-gray-700">ತಂದೆಯ ಹೆಸರು:</label>
+                    <input type="text" id="del-father" placeholder="ತಂದೆಯ ಹೆಸರು" class="w-full p-2 border rounded-lg mt-1">
+                </div>
+                <div>
+                    <label class="font-bold text-gray-700">ಮೊಬೈಲ್ ನಂಬರ್:</label>
+                    <input type="tel" id="del-phone" placeholder="10 ಅಂಕಿಯ ನಂಬರ್" maxlength="10" class="w-full p-2 border rounded-lg mt-1">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="del-district" placeholder="ಜಿಲ್ಲೆ" value="ಯಾದಗಿರಿ" class="p-2 border rounded-lg">
+                    <input type="text" id="del-taluk" placeholder="ತಾಲೂಕು" value="ಶಹಾಪುರ" class="p-2 border rounded-lg">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="del-city" placeholder="ಊರು / ಗ್ರಾಮ" class="p-2 border rounded-lg">
+                    <input type="text" id="del-pincode" placeholder="ಪಿನ್ ಕೋಡ್" maxlength="6" value="585223" class="p-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="font-bold text-gray-700">ಆಧಾರ್ ಕಾರ್ಡ್ ಮುಂಭಾಗ (Front):</label>
+                    <input type="file" id="del-aadhar-front" accept="image/*" capture="environment" class="w-full p-1 border rounded-lg mt-1">
+                </div>
+                <div>
+                    <label class="font-bold text-gray-700">ಆಧಾರ್ ಕಾರ್ಡ್ ಹಿಂಭಾಗ (Back):</label>
+                    <input type="file" id="del-aadhar-back" accept="image/*" capture="environment" class="w-full p-1 border rounded-lg mt-1">
+                </div>
+                <div>
+                    <label class="font-bold text-gray-700">ಡೆಲಿವರಿ ಬಾಯ್ ಫೋಟೋ (Selfie):</label>
+                    <input type="file" id="del-selfie" accept="image/*" capture="user" class="w-full p-1 border rounded-lg mt-1">
+                </div>
+
+                <button type="button" onclick="registerNewDeliveryBoy()" class="w-full bg-green-600 text-white py-2.5 rounded-xl font-bold shadow mt-2 cursor-pointer">ಖಾತೆ ಸೃಷ್ಟಿಸಿ & 4 ಅಂಕಿಯ ID ಪಡೆದುಕೊಳ್ಳಿ</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         const MASTER_SECRET_CODE = "9353444070";
@@ -134,15 +184,20 @@
             document.getElementById('lock-screen').classList.remove('hidden');
         }
 
-        function showModal(title, message, icon = '🎉') {
+        function showModal(title, message, icon = '🎉', callback = null) {
             document.getElementById('modal-title').innerText = title;
             document.getElementById('modal-message').innerHTML = message;
             document.getElementById('modal-icon').innerText = icon;
             document.getElementById('custom-modal').classList.remove('hidden');
+            window.modalCallback = callback;
         }
 
         function closeModal() {
             document.getElementById('custom-modal').classList.add('hidden');
+            if (typeof window.modalCallback === 'function') {
+                window.modalCallback();
+                window.modalCallback = null;
+            }
         }
 
         function zoomImage(src) {
@@ -181,14 +236,12 @@
         function renderVendors(filter = '') {
             let container = document.getElementById('vendors-list-container');
             let currentVendor = JSON.parse(localStorage.getItem('currentVendor'));
-            let vendors = currentVendor ? [currentVendor] : []; // ಅಥವಾ ಎಲ್ಲಾ ವೆಂಡರ್ಸ್ ಲಿಸ್ಟ್ ಲೋಕಲ್ ಸ್ಟೋರೇಜ್‌ನಿಂದ ಪಡೆಯುವುದು
             
-            // ಬದಲಿ ಕ್ರಮವಾಗಿ ಮಾರ್ಕೆಟ್ ಆರ್ಡರ್‌ಗಳಿಂದ ವೆಂಡರ್‌ಗಳನ್ನು ಸಂಗ್ರಹಿಸುವುದು
             let products = JSON.parse(localStorage.getItem('market_products')) || [];
             let uniqueShops = {};
             products.forEach(p => {
                 if (p.vendorShop && !uniqueShops[p.vendorShop]) {
-                    uniqueShops[p.vendorShop] = { shopName: p.vendorShop, phone: p.vendorPhone || '9999999999', name: 'ಮಾಲೀಕರು' };
+                    uniqueShops[p.vendorShop] = { shopName: p.vendorShop, phone: p.vendorPhone || '9999999999', name: 'ಮಾಲೀಕರು', membershipActive: false };
                 }
             });
             if (currentVendor) uniqueShops[currentVendor.shopName] = currentVendor;
@@ -221,7 +274,7 @@
                             ${v.membershipActive ? '✨ 1 ವರ್ಷ ಮೆಂಬರ್‌ಶಿಪ್ ಸಕ್ರಿಯವಾಗಿದೆ (₹100 ಪಾವತಿಸಲಾಗಿದೆ)' : '⏳ ಮೆಂಬರ್‌ಶಿಪ್ ಪೆಂಡಿಂಗ್'}
                         </span>
                         ${!v.membershipActive ? `
-                            <button type="button" onclick="event.stopPropagation(); activateMembership('${v.shopName}')" class="bg-green-600 text-white px-2 py-1 rounded text-[10px] font-bold cursor-pointer">₹100 ಪಾವತಿ OK ಮಾಡಿ</button>
+                            <button type="button" onclick="event.stopPropagation(); activateMembership('${v.shopName}')" class="bg-green-600 text-white px-2.5 py-1 rounded text-[10px] font-bold cursor-pointer">₹100 ಪಾವತಿ OK ಮಾಡಿ</button>
                         ` : ''}
                     </div>
                 </div>
@@ -233,9 +286,9 @@
             if (currentVendor && currentVendor.shopName === shopName) {
                 currentVendor.membershipActive = true;
                 localStorage.setItem('currentVendor', JSON.stringify(currentVendor));
-                renderVendors();
-                showModal("ಯಶಸ್ವಿ!", "ಅಂಗಡಿ ಮಾಲೀಕರಿಗೆ 1 ವರ್ಷದ ಮೆಂಬರ್‌ಶಿಪ್ ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ!", "✨");
             }
+            renderVendors();
+            showModal("ಪಾವತಿ ಯಶಸ್ವಿ!", "ಪಾವತಿ ಯಶಸ್ವಿಯಾಗಿದೆ! (Payment Success)<br><b>ನ್ಯೂ ಮೆಂಬರ್‌ಶಿಪ್ ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ (1 ವರ್ಷ).</b>", "✨");
         }
 
         function openVendorDetail(shopName) {
@@ -336,7 +389,77 @@
             document.getElementById('detail-drawer').classList.remove('hidden');
         }
 
-        // 3. ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ರೆಂಡರಿಂಗ್
+        // 3. ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ರೆಂಡರಿಂಗ್ & ನೋಂದಣಿ
+        function openDeliveryRegModal() {
+            document.getElementById('delivery-reg-modal').classList.remove('hidden');
+        }
+
+        function closeDeliveryRegModal() {
+            document.getElementById('delivery-reg-modal').classList.add('hidden');
+        }
+
+        function compressImage(file, callback) {
+            if (!file) {
+                callback("");
+                return;
+            }
+            let reader = new FileReader();
+            reader.onload = function (e) {
+                let img = new Image();
+                img.onload = function () {
+                    let canvas = document.createElement('canvas');
+                    let ctx = canvas.getContext('2d');
+                    canvas.width = 150;
+                    canvas.height = 150;
+                    ctx.drawImage(img, 0, 0, 150, 150);
+                    callback(canvas.toDataURL('image/jpeg', 0.5));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function registerNewDeliveryBoy() {
+            let name = document.getElementById('del-name').value.trim();
+            let father = document.getElementById('del-father').value.trim();
+            let phone = document.getElementById('del-phone').value.trim();
+            let district = document.getElementById('del-district').value.trim();
+            let taluk = document.getElementById('del-taluk').value.trim();
+            let city = document.getElementById('del-city').value.trim();
+            let pincode = document.getElementById('del-pincode').value.trim();
+            let selfieFile = document.getElementById('del-selfie').files[0];
+            let frontFile = document.getElementById('del-aadhar-front').files[0];
+            let backFile = document.getElementById('del-aadhar-back').files[0];
+
+            if (!name || !phone || phone.length < 10) {
+                alert('ದಯವಿಟ್ಟು ಸರಿಯಾದ ಹೆಸರು ಮತ್ತು 10 ಅಂಕಿಯ ಮೊಬೈಲ್ ನಂಬರ್ ಹಾಕಿ!');
+                return;
+            }
+
+            let deliveryId = Math.floor(1000 + Math.random() * 9000).toString();
+
+            compressImage(selfieFile, function(selfieUrl) {
+                compressImage(frontFile, function(frontUrl) {
+                    compressImage(backFile, function(backUrl) {
+                        let newBoy = {
+                            name, father, phone, district, taluk, city, pincode, deliveryId,
+                            selfie: selfieUrl || '',
+                            aadharFront: frontUrl || '',
+                            aadharBack: backUrl || ''
+                        };
+
+                        let allBoys = JSON.parse(localStorage.getItem('all_delivery_boys')) || [];
+                        allBoys.push(newBoy);
+                        localStorage.setItem('all_delivery_boys', JSON.stringify(allBoys));
+
+                        closeDeliveryRegModal();
+                        renderDeliveryBoys();
+                        showModal("ಯಶಸ್ವಿ!", `ಡೆಲಿವರಿ ಬಾಯ್ ಖಾತೆ ಸೃಷ್ಟಿಯಾಗಿದೆ!<br><br><b>ಡಿಜಿಟಲ್ ID: <span style="color:red; font-size:18px;">${deliveryId}</span></b>`, "🛵");
+                    });
+                });
+            });
+        }
+
         function renderDeliveryBoys(filter = '') {
             let container = document.getElementById('delivery-list-container');
             let allBoys = JSON.parse(localStorage.getItem('all_delivery_boys')) || [
@@ -369,7 +492,7 @@
                                 <img src="${b.selfie || 'https://via.placeholder.com/150'}" onclick="event.stopPropagation(); zoomImage(this.src)" class="w-10 h-10 object-cover rounded-full border cursor-pointer">
                                 <div>
                                     <p class="font-bold text-xs text-indigo-700">${b.name} (ID: ${b.deliveryId})</p>
-                                    <p class="text-[10px] text-gray-600">ಮೊಬೈಲ್: ${b.phone}</p>
+                                    <p class="text-[10px] text-gray-600">ಮೊಬೈಲ್: ${b.phone} | ಊರು: ${b.city || 'ಶಹಾಪುರ'}</p>
                                 </div>
                             </div>
                             <button type="button" onclick="event.stopPropagation(); promptDelete('delivery', '${b.deliveryId}')" class="bg-red-500 text-white px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer">ಡಿಲೀಟ್</button>
@@ -393,8 +516,14 @@
             let content = `
                 <div class="space-y-2">
                     <p class="font-bold text-indigo-700 text-sm">ಡೆಲಿವರಿ ಬಾಯ್ ಹೆಸರು: ${boy.name} (ID: ${deliveryId})</p>
+                    <p class="text-xs"><b>ತಂದೆಯ ಹೆಸರು:</b> ${boy.father || '-'}</p>
                     <p class="text-xs"><b>ಮೊಬೈಲ್:</b> ${boy.phone}</p>
-                    <p class="text-xs"><b>ಸ್ಥಳ:</b> ${boy.city || 'ಶಹಾಪುರ'}</p>
+                    <p class="text-xs"><b>ಸ್ಥಳ:</b> ${boy.city || 'ಶಹಾಪುರ'}, ${boy.taluk || ''} (Pin: ${boy.pincode || ''})</p>
+                    <div class="flex gap-2 pt-2">
+                        ${boy.selfie ? `<img src="${boy.selfie}" onclick="zoomImage(this.src)" class="w-20 h-20 object-cover rounded border cursor-pointer">` : ''}
+                        ${boy.aadharFront ? `<img src="${boy.aadharFront}" onclick="zoomImage(this.src)" class="w-20 h-20 object-cover rounded border cursor-pointer">` : ''}
+                        ${boy.aadharBack ? `<img src="${boy.aadharBack}" onclick="zoomImage(this.src)" class="w-20 h-20 object-cover rounded border cursor-pointer">` : ''}
+                    </div>
                     <hr>
                     <p class="font-bold text-xs text-gray-800">ಮಾಡಿದ ಆರ್ಡರ್‌ಗಳ ಇತಿಹಾಸ:</p>
                     ${boyOrders.length === 0 ? '<p class="text-gray-500">ಯಾವುದೇ ಆರ್ಡರ್‌ಗಳಿಲ್ಲ.</p>' : boyOrders.map(o => `
@@ -461,6 +590,9 @@
             else if (activeTab === 'customers') renderCustomers(query);
             else if (activeTab === 'delivery') renderDeliveryBoys(query);
         }
+
+        // ಆಪ್ ಓಪನ್ ಆದ ತಕ್ಷಣ ಡೇಟಾ ಲೋಡ್ ಮಾಡುವುದು
+        loadPanelData();
     </script>
 </body>
 </html>
