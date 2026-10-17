@@ -389,9 +389,8 @@
             document.getElementById('detail-drawer').classList.remove('hidden');
         }
 
-        // 3. ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ರೆಂಡರಿಂಗ್ & ನೋಂದಣಿ (ಆಟೋ ಸೈಜ್ ಕಂಪ್ರೆಷನ್)
+        // 3. ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ರೆಂಡರಿಂಗ್ & ನೋಂದಣಿ (ಸರಿಯಾದ ಇಮೇಜ್ ರೀಡಿಂಗ್ ಮತ್ತು ಐಡಿ ಜನರೇಷನ್)
         function openDeliveryRegModal() {
-            // ಇನ್‌ಪುಟ್ ಬಾಕ್ಸ್‌ಗಳನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಖಾಲಿ ಮಾಡುವುದು
             document.getElementById('del-name').value = '';
             document.getElementById('del-father').value = '';
             document.getElementById('del-phone').value = '';
@@ -410,8 +409,8 @@
             document.getElementById('delivery-reg-modal').classList.add('hidden');
         }
 
-        // ಫೋಟೋಗಳನ್ನು ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ ಸೈಜ್ ಮತ್ತು ಕಂಪ್ಯೂಟ್ ಮಾಡಿ ಅಪ್‌ಲೋಡ್ ಮಾಡುವ ಫಂಕ್ಷನ್
-        function compressAndConvertImage(file, callback) {
+        // ಫೋಟೋಗಳನ್ನು ಸುಲಭವಾಗಿ ಮತ್ತು ವೇಗವಾಗಿ ಕನ್ವರ್ಟ್ ಮಾಡಲು ಸರಿಯಾದ ಫಂಕ್ಷನ್
+        function convertFileToBase64(file, callback) {
             if (!file) {
                 callback("");
                 return;
@@ -422,34 +421,23 @@
                 img.onload = function () {
                     let canvas = document.createElement('canvas');
                     let ctx = canvas.getContext('2d');
-                    
-                    // ಆಟೋ ಸೈಜ್ (ಮ್ಯಾಕ್ಸ್ ಅಗಲ/ಎತ್ತರ 800px)
-                    let max_size = 800;
+                    let max_size = 600; // ಸೈಜ್ ದೊಡ್ಡದಾಗದಂತೆ ಮಿತಿಗೊಳಿಸುವುದು
                     let width = img.width;
                     let height = img.height;
                     
                     if (width > height) {
-                        if (width > max_size) {
-                            height *= max_size / width;
-                            width = max_size;
-                        }
+                        if (width > max_size) { height *= max_size / width; width = max_size; }
                     } else {
-                        if (height > max_size) {
-                            width *= max_size / height;
-                            height = max_size;
-                        }
+                        if (height > max_size) { width *= max_size / height; height = max_size; }
                     }
                     
                     canvas.width = width;
                     canvas.height = height;
                     ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // 0.7 ಕ್ವಾಲಿಟಿಯಲ್ಲಿ ಕಂಪ್ರೆಸ್ ಮಾಡಿ ಕಳುಹಿಸುವುದು (ಕಲರ್ ಅಥವಾ ವೈಟ್ ಫೋಟೋಗಳು ಪರ್ಫೆಕ್ಟ್ ಆಗಿ ಸೇವ್ ಆಗುತ್ತವೆ)
-                    let compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                    callback(compressedDataUrl);
+                    callback(canvas.toDataURL('image/jpeg', 0.7));
                 };
                 img.onerror = function () {
-                    callback(e.target.result); // ಫೇಲ್ ಆದರೆ ಒರಿಜಿನಲ್ ಕಳುಹಿಸುವುದು
+                    callback(e.target.result);
                 };
                 img.src = e.target.result;
             };
@@ -479,9 +467,9 @@
 
             let deliveryId = Math.floor(1000 + Math.random() * 9000).toString();
 
-            compressAndConvertImage(selfieFile, function(selfieUrl) {
-                compressAndConvertImage(frontFile, function(frontUrl) {
-                    compressAndConvertImage(backFile, function(backUrl) {
+            convertFileToBase64(selfieFile, function(selfieUrl) {
+                convertFileToBase64(frontFile, function(frontUrl) {
+                    convertFileToBase64(backFile, function(backUrl) {
                         let newBoy = {
                             name, father, phone, district, taluk, city, pincode, deliveryId,
                             selfie: selfieUrl || 'https://via.placeholder.com/150',
@@ -495,7 +483,9 @@
 
                         closeDeliveryRegModal();
                         renderDeliveryBoys();
-                        showModal("ಯಶಸ್ವಿ!", `ಡೆಲಿವರಿ ಬಾಯ್ ಖಾತೆ ಯಶಸ್ವಿಯಾಗಿ ಸೃಷ್ಟಿಯಾಗಿದೆ!<br><br><b>ಡಿಜಿಟಲ್ ID: <span style="color:red; font-size:20px;">${deliveryId}</span></b>`, "🛵");
+                        
+                        // ಇಲ್ಲಿ 4 ಅಂಕಿಯ ಐಡಿ ಸ್ಪಷ್ಟವಾಗಿ ಕಾಣುವಂತೆ ಪಾಪ್‌ಅಪ್ ತೋರಿಸಲಾಗುತ್ತದೆ
+                        showModal("ಯಶಸ್ವಿ!", `ಡೆಲಿವರಿ ಬಾಯ್ ಖಾತೆ ಯಶಸ್ವಿಯಾಗಿ ಸೃಷ್ಟಿಯಾಗಿದೆ!<br><br><b>ನಿಮ್ಮ 4 ಅಂಕಿಯ ಡಿಜಿಟಲ್ ID: <span style="color:red; font-size:22px;">${deliveryId}</span></b>`, "🛵");
                     });
                 });
             });
@@ -503,9 +493,7 @@
 
         function renderDeliveryBoys(filter = '') {
             let container = document.getElementById('delivery-list-container');
-            let allBoys = JSON.parse(localStorage.getItem('all_delivery_boys')) || [
-                { name: "ಅನಿಲ್ ರಾಥೋಡ್", deliveryId: "4821", phone: "9353444070", city: "ಶಹಾಪುರ", selfie: "" }
-            ];
+            let allBoys = JSON.parse(localStorage.getItem('all_delivery_boys')) || [];
 
             if (filter) {
                 allBoys = allBoys.filter(b => b.name.toLowerCase().includes(filter) || b.deliveryId.includes(filter) || b.phone.includes(filter));
@@ -532,8 +520,8 @@
                             <div class="flex items-center gap-2">
                                 <img src="${b.selfie || 'https://via.placeholder.com/150'}" onclick="event.stopPropagation(); zoomImage(this.src)" class="w-10 h-10 object-cover rounded-full border cursor-pointer">
                                 <div>
-                                    <p class="font-bold text-xs text-indigo-700">${b.name} (ID: ${b.deliveryId})</p>
-                                    <p class="text-[10px] text-gray-600">ಮೊಬೈಲ್: ${b.phone} | ಊರು: ${b.city || 'ಶಹಾಪುರ'}</p>
+                                    <p class="font-bold text-xs text-indigo-700">${b.name} (ID: <span class="text-red-600 font-extrabold">${b.deliveryId}</span>)</p>
+                                    <p class="text-[10px] text-gray-600">ಮೊಬೈಲ್: ${b.phone} | ಊರು: ${b.city || '-'}</p>
                                 </div>
                             </div>
                             <button type="button" onclick="event.stopPropagation(); promptDelete('delivery', '${b.deliveryId}')" class="bg-red-500 text-white px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer">ಡಿಲೀಟ್</button>
@@ -550,16 +538,16 @@
 
         function openDeliveryDetail(deliveryId) {
             let allBoys = JSON.parse(localStorage.getItem('all_delivery_boys')) || [];
-            let boy = allBoys.find(b => b.deliveryId === deliveryId) || { name: "ಅನಿಲ್ ರಾಥೋಡ್", deliveryId: "4821" };
+            let boy = allBoys.find(b => b.deliveryId === deliveryId) || {};
             let orders = JSON.parse(localStorage.getItem('market_orders')) || [];
             let boyOrders = orders.filter(o => o.acceptedBy === deliveryId);
 
             let content = `
                 <div class="space-y-2">
-                    <p class="font-bold text-indigo-700 text-sm">ಡೆಲಿವರಿ ಬಾಯ್ ಹೆಸರು: ${boy.name} (ID: ${deliveryId})</p>
+                    <p class="font-bold text-indigo-700 text-sm">ಡೆಲಿವರಿ ಬಾಯ್ ಹೆಸರು: ${boy.name} (ID: <span class="text-red-600">${deliveryId}</span>)</p>
                     <p class="text-xs"><b>ತಂದೆಯ ಹೆಸರು:</b> ${boy.father || '-'}</p>
                     <p class="text-xs"><b>ಮೊಬೈಲ್:</b> ${boy.phone}</p>
-                    <p class="text-xs"><b>ಸ್ಥಳ:</b> ${boy.city || 'ಶಹಾಪುರ'}, ${boy.taluk || ''} (Pin: ${boy.pincode || ''})</p>
+                    <p class="text-xs"><b>ಸ್ಥಳ:</b> ${boy.city || ''}, ${boy.taluk || ''} (Pin: ${boy.pincode || ''})</p>
                     <div class="flex gap-2 pt-2 flex-wrap">
                         ${boy.selfie ? `<div><p class="text-[10px] font-bold">ಸೆಲ್ಫಿ ಫೋಟೋ:</p><img src="${boy.selfie}" onclick="zoomImage(this.src)" class="w-20 h-20 object-cover rounded border cursor-pointer"></div>` : ''}
                         ${boy.aadharFront ? `<div><p class="text-[10px] font-bold">ಆಧಾರ್ ಮುಂಭಾಗ:</p><img src="${boy.aadharFront}" onclick="zoomImage(this.src)" class="w-20 h-20 object-cover rounded border cursor-pointer"></div>` : ''}
@@ -602,7 +590,7 @@
                 executeDelete();
             } else {
                 alert('ತಪ್ಪು ಕೋಡ್! ಡಿಲೀಟ್ ಮಾಡಲು ಸಾಧ್ಯವಿಲ್ಲ.');
-                document.getElementById('delete-code-input').value = '';
+                document.getElementById('delete-code-input'].value = '';
             }
         }
 
@@ -611,7 +599,8 @@
             if (type === 'vendor') {
                 localStorage.removeItem('currentVendor');
                 showModal("ಯಶಸ್ವಿ!", "ಅಂಗಡಿ ಮಾಲೀಕರ ಐಡಿ ಡಿಲೀಟ್ ಮಾಡಲಾಗಿದೆ.", "🗑️");
-            } else if (type === 'customer') {
+            } else class = '';
+            if (type === 'customer') {
                 let orders = JSON.parse(localStorage.getItem('market_orders')) || [];
                 orders = orders.filter(o => o.phone !== id);
                 localStorage.setItem('market_orders', JSON.stringify(orders));
