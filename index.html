@@ -138,24 +138,24 @@
                     <input type="tel" id="del-phone" placeholder="10 ಅಂಕಿಯ ನಂಬರ್" maxlength="10" class="w-full p-2 border rounded-lg mt-1">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <input type="text" id="del-district" placeholder="ಜಿಲ್ಲೆ" value="ಯಾದಗಿರಿ" class="p-2 border rounded-lg">
-                    <input type="text" id="del-taluk" placeholder="ತಾಲೂಕು" value="ಶಹಾಪುರ" class="p-2 border rounded-lg">
+                    <input type="text" id="del-district" placeholder="ಜಿಲ್ಲೆ" class="p-2 border rounded-lg">
+                    <input type="text" id="del-taluk" placeholder="ತಾಲೂಕು" class="p-2 border rounded-lg">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <input type="text" id="del-city" placeholder="ಊರು / ಗ್ರಾಮ" class="p-2 border rounded-lg">
-                    <input type="text" id="del-pincode" placeholder="ಪಿನ್ ಕೋಡ್" maxlength="6" value="585223" class="p-2 border rounded-lg">
+                    <input type="text" id="del-pincode" placeholder="ಪಿನ್ ಕೋಡ್" maxlength="6" class="p-2 border rounded-lg">
                 </div>
                 <div>
                     <label class="font-bold text-gray-700">ಆಧಾರ್ ಕಾರ್ಡ್ ಮುಂಭಾಗ (Front):</label>
-                    <input type="file" id="del-aadhar-front" accept="image/*" capture="environment" class="w-full p-1 border rounded-lg mt-1">
+                    <input type="file" id="del-aadhar-front" accept="image/*" class="w-full p-1 border rounded-lg mt-1">
                 </div>
                 <div>
                     <label class="font-bold text-gray-700">ಆಧಾರ್ ಕಾರ್ಡ್ ಹಿಂಭಾಗ (Back):</label>
-                    <input type="file" id="del-aadhar-back" accept="image/*" capture="environment" class="w-full p-1 border rounded-lg mt-1">
+                    <input type="file" id="del-aadhar-back" accept="image/*" class="w-full p-1 border rounded-lg mt-1">
                 </div>
                 <div>
                     <label class="font-bold text-gray-700">ಡೆಲಿವರಿ ಬಾಯ್ ಫೋಟೋ (Selfie):</label>
-                    <input type="file" id="del-selfie" accept="image/*" capture="user" class="w-full p-1 border rounded-lg mt-1">
+                    <input type="file" id="del-selfie" accept="image/*" class="w-full p-1 border rounded-lg mt-1">
                 </div>
 
                 <button type="button" onclick="registerNewDeliveryBoy()" class="w-full bg-green-600 text-white py-2.5 rounded-xl font-bold shadow mt-2 cursor-pointer">ಖಾತೆ ಸೃಷ್ಟಿಸಿ & 4 ಅಂಕಿಯ ID ಪಡೆದುಕೊಳ್ಳಿ</button>
@@ -389,8 +389,20 @@
             document.getElementById('detail-drawer').classList.remove('hidden');
         }
 
-        // 3. ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ರೆಂಡರಿಂಗ್ & ನೋಂದಣಿ (ಸುರಕ್ಷಿತ ಫೋಟೋ ರೀಡರ್)
+        // 3. ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ರೆಂಡರಿಂಗ್ & ನೋಂದಣಿ (ಆಟೋ ಸೈಜ್ ಕಂಪ್ರೆಷನ್)
         function openDeliveryRegModal() {
+            // ಇನ್‌ಪುಟ್ ಬಾಕ್ಸ್‌ಗಳನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಖಾಲಿ ಮಾಡುವುದು
+            document.getElementById('del-name').value = '';
+            document.getElementById('del-father').value = '';
+            document.getElementById('del-phone').value = '';
+            document.getElementById('del-district').value = '';
+            document.getElementById('del-taluk').value = '';
+            document.getElementById('del-city').value = '';
+            document.getElementById('del-pincode').value = '';
+            document.getElementById('del-selfie').value = '';
+            document.getElementById('del-aadhar-front').value = '';
+            document.getElementById('del-aadhar-back').value = '';
+
             document.getElementById('delivery-reg-modal').classList.remove('hidden');
         }
 
@@ -398,14 +410,48 @@
             document.getElementById('delivery-reg-modal').classList.add('hidden');
         }
 
-        function readFileAsBase64(file, callback) {
+        // ಫೋಟೋಗಳನ್ನು ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ ಸೈಜ್ ಮತ್ತು ಕಂಪ್ಯೂಟ್ ಮಾಡಿ ಅಪ್‌ಲೋಡ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+        function compressAndConvertImage(file, callback) {
             if (!file) {
                 callback("");
                 return;
             }
             let reader = new FileReader();
             reader.onload = function (e) {
-                callback(e.target.result);
+                let img = new Image();
+                img.onload = function () {
+                    let canvas = document.createElement('canvas');
+                    let ctx = canvas.getContext('2d');
+                    
+                    // ಆಟೋ ಸೈಜ್ (ಮ್ಯಾಕ್ಸ್ ಅಗಲ/ಎತ್ತರ 800px)
+                    let max_size = 800;
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > height) {
+                        if (width > max_size) {
+                            height *= max_size / width;
+                            width = max_size;
+                        }
+                    } else {
+                        if (height > max_size) {
+                            width *= max_size / height;
+                            height = max_size;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // 0.7 ಕ್ವಾಲಿಟಿಯಲ್ಲಿ ಕಂಪ್ರೆಸ್ ಮಾಡಿ ಕಳುಹಿಸುವುದು (ಕಲರ್ ಅಥವಾ ವೈಟ್ ಫೋಟೋಗಳು ಪರ್ಫೆಕ್ಟ್ ಆಗಿ ಸೇವ್ ಆಗುತ್ತವೆ)
+                    let compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    callback(compressedDataUrl);
+                };
+                img.onerror = function () {
+                    callback(e.target.result); // ಫೇಲ್ ಆದರೆ ಒರಿಜಿನಲ್ ಕಳುಹಿಸುವುದು
+                };
+                img.src = e.target.result;
             };
             reader.onerror = function () {
                 callback("");
@@ -427,15 +473,15 @@
             let backFile = document.getElementById('del-aadhar-back').files[0];
 
             if (!name || !phone || phone.length < 10) {
-                alert('ದಯವಿಟ್ಟು ಸರಿಯಾದ ಹೆಸರು ಮತ್ತು 10 ಅಂಕಿಯ ಮೊಬೈಲ್ ನಂಬರ್ ಹಾಕಿ!');
+                alert('ದಯವಿಟ್ಟು ಸರಿಯಾದ ಡೆಲಿವರಿ ಬಾಯ್ ಹೆಸರು ಮತ್ತು 10 ಅಂಕಿಯ ಮೊಬೈಲ್ ನಂಬರ್ ಹಾಕಿ!');
                 return;
             }
 
             let deliveryId = Math.floor(1000 + Math.random() * 9000).toString();
 
-            readFileAsBase64(selfieFile, function(selfieUrl) {
-                readFileAsBase64(frontFile, function(frontUrl) {
-                    readFileAsBase64(backFile, function(backUrl) {
+            compressAndConvertImage(selfieFile, function(selfieUrl) {
+                compressAndConvertImage(frontFile, function(frontUrl) {
+                    compressAndConvertImage(backFile, function(backUrl) {
                         let newBoy = {
                             name, father, phone, district, taluk, city, pincode, deliveryId,
                             selfie: selfieUrl || 'https://via.placeholder.com/150',
