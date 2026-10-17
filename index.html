@@ -164,7 +164,6 @@
     </div>
 
     <script>
-        // ರಹಸ್ಯ ಕೋಡ್ ಅನ್ನು ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡಿ ಅಥವಾ ನೇರವಾಗಿ ಕಾಣದಂತೆ ಸ್ಟೋರ್ ಮಾಡಲಾಗಿದೆ
         const MASTER_SECRET_CODE = atob("OTM1MzQ0NDA3MA==");
         let activeTab = 'vendors';
         let deleteTarget = { type: '', id: null };
@@ -390,7 +389,7 @@
             document.getElementById('detail-drawer').classList.remove('hidden');
         }
 
-        // 3. ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ರೆಂಡರಿಂಗ್ & ನೋಂದಣಿ
+        // 3. ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ರೆಂಡರಿಂಗ್ & ನೋಂದಣಿ (ಯಾವುದೇ ಸೈಜ್ ಫೋಟೋ ಸ್ವೀಕರಿಸುವ ಕೋಡ್)
         function openDeliveryRegModal() {
             document.getElementById('del-name').value = '';
             document.getElementById('del-father').value = '';
@@ -410,6 +409,7 @@
             document.getElementById('delivery-reg-modal').classList.add('hidden');
         }
 
+        // ಯಾವುದೇ ದೊಡ್ಡ ಅಥವಾ ಚಿಕ್ಕ ಫೋಟೋವನ್ನು (Color/White) ಯಾವುದೇ ಎರರ್ ಇಲ್ಲದೆ ಅಪ್‌ಲೋಡ್ ಮಾಡುವ ಅತ್ಯುತ್ತಮ ಫಂಕ್ಷನ್
         function convertFileToBase64(file, callback) {
             if (!file) {
                 callback("");
@@ -421,7 +421,7 @@
                 img.onload = function () {
                     let canvas = document.createElement('canvas');
                     let ctx = canvas.getContext('2d');
-                    let max_size = 600;
+                    let max_size = 800; // ಫೋಟೋ ಕ್ವಾಲಿಟಿ ಹಾಗೂ ಮೆಮೊರಿಗಾಗಿ ಅತ್ಯುತ್ತಮ ಅಳತೆ
                     let width = img.width;
                     let height = img.height;
                     
@@ -434,10 +434,10 @@
                     canvas.width = width;
                     canvas.height = height;
                     ctx.drawImage(img, 0, 0, width, height);
-                    callback(canvas.toDataURL('image/jpeg', 0.7));
+                    callback(canvas.toDataURL('image/jpeg', 0.8));
                 };
                 img.onerror = function () {
-                    callback(e.target.result);
+                    callback(e.target.result); // ಇಮೇಜ್ ಲೋಡ್ ಆಗಲು ಸಮಸ್ಯೆ ಇದ್ದರೆ ನೇರವಾಗಿ ರೀಡ್ ಮಾಡುವುದು
                 };
                 img.src = e.target.result;
             };
@@ -484,7 +484,7 @@
                         closeDeliveryRegModal();
                         renderDeliveryBoys();
                         
-                        // ಸಕ್ಸಸ್ ಪಾಪ್‌ಅಪ್‌ನಲ್ಲಿ 4 ಅಂಕಿಯ ಡಿಜಿಟಲ್ ID ಸ್ಪಷ್ಟವಾಗಿ ಕಾಣುವಂತೆ ಮಾಡಲಾಗಿದೆ
+                        // ಯಶಸ್ವಿ ಪಾಪ್‌ಅಪ್ ಹಾಗೂ 4 ಅಂಕಿಯ ಡಿಜಿಟಲ್ ID ಸ್ಪಷ್ಟವಾಗಿ ಕಾಣುವಂತೆ ಪ್ರದರ್ಶಿಸುವುದು
                         showModal("ಯಶಸ್ವಿ!", `ಡೆಲಿವರಿ ಬಾಯ್ ಖಾತೆ ಯಶಸ್ವಿಯಾಗಿ ಸೃಷ್ಟಿಯಾಗಿದೆ!<br><br><b>ನಿಮ್ಮ 4 ಅಂಕಿಯ ಡಿಜಿಟಲ್ ID: <span style="color:red; font-size:24px;">${deliveryId}</span></b>`, "🛵");
                     });
                 });
