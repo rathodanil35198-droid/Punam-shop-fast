@@ -274,7 +274,7 @@
                             ${v.membershipActive ? '✨ 1 ವರ್ಷ ಮೆಂಬರ್‌ಶಿಪ್ ಸಕ್ರಿಯವಾಗಿದೆ (₹100 ಪಾವತಿಸಲಾಗಿದೆ)' : '⏳ ಮೆಂಬರ್‌ಶಿಪ್ ಪೆಂಡಿಂಗ್'}
                         </span>
                         ${!v.membershipActive ? `
-                            <button type="button" onclick="event.stopPropagation(); activateMembership('${v.shopName}')" class="bg-green-600 text-white px-2.5 py-1 rounded text-[10px] font-bold cursor-pointer">₹100 ಪಾವತಿ OK ಮಾಡಿ</button>
+                            <button type="button" onclick="event.stopPropagation(); activateMembership('${v.shopName}')" class="bg-green-600 text-white px-2 py-1 rounded text-[10px] font-bold cursor-pointer">₹100 ಪಾವತಿ OK ಮಾಡಿ</button>
                         ` : ''}
                     </div>
                 </div>
@@ -389,7 +389,7 @@
             document.getElementById('detail-drawer').classList.remove('hidden');
         }
 
-        // 3. ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ರೆಂಡರಿಂಗ್ & ನೋಂದಣಿ
+        // 3. ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ರೆಂಡರಿಂಗ್ & ನೋಂದಣಿ (ಸುರಕ್ಷಿತ ಫೋಟೋ ರೀಡರ್)
         function openDeliveryRegModal() {
             document.getElementById('delivery-reg-modal').classList.remove('hidden');
         }
@@ -398,23 +398,17 @@
             document.getElementById('delivery-reg-modal').classList.add('hidden');
         }
 
-        function compressImage(file, callback) {
+        function readFileAsBase64(file, callback) {
             if (!file) {
                 callback("");
                 return;
             }
             let reader = new FileReader();
             reader.onload = function (e) {
-                let img = new Image();
-                img.onload = function () {
-                    let canvas = document.createElement('canvas');
-                    let ctx = canvas.getContext('2d');
-                    canvas.width = 150;
-                    canvas.height = 150;
-                    ctx.drawImage(img, 0, 0, 150, 150);
-                    callback(canvas.toDataURL('image/jpeg', 0.5));
-                };
-                img.src = e.target.result;
+                callback(e.target.result);
+            };
+            reader.onerror = function () {
+                callback("");
             };
             reader.readAsDataURL(file);
         }
@@ -427,6 +421,7 @@
             let taluk = document.getElementById('del-taluk').value.trim();
             let city = document.getElementById('del-city').value.trim();
             let pincode = document.getElementById('del-pincode').value.trim();
+            
             let selfieFile = document.getElementById('del-selfie').files[0];
             let frontFile = document.getElementById('del-aadhar-front').files[0];
             let backFile = document.getElementById('del-aadhar-back').files[0];
@@ -438,12 +433,12 @@
 
             let deliveryId = Math.floor(1000 + Math.random() * 9000).toString();
 
-            compressImage(selfieFile, function(selfieUrl) {
-                compressImage(frontFile, function(frontUrl) {
-                    compressImage(backFile, function(backUrl) {
+            readFileAsBase64(selfieFile, function(selfieUrl) {
+                readFileAsBase64(frontFile, function(frontUrl) {
+                    readFileAsBase64(backFile, function(backUrl) {
                         let newBoy = {
                             name, father, phone, district, taluk, city, pincode, deliveryId,
-                            selfie: selfieUrl || '',
+                            selfie: selfieUrl || 'https://via.placeholder.com/150',
                             aadharFront: frontUrl || '',
                             aadharBack: backUrl || ''
                         };
@@ -454,7 +449,7 @@
 
                         closeDeliveryRegModal();
                         renderDeliveryBoys();
-                        showModal("ಯಶಸ್ವಿ!", `ಡೆಲಿವರಿ ಬಾಯ್ ಖಾತೆ ಸೃಷ್ಟಿಯಾಗಿದೆ!<br><br><b>ಡಿಜಿಟಲ್ ID: <span style="color:red; font-size:18px;">${deliveryId}</span></b>`, "🛵");
+                        showModal("ಯಶಸ್ವಿ!", `ಡೆಲಿವರಿ ಬಾಯ್ ಖಾತೆ ಯಶಸ್ವಿಯಾಗಿ ಸೃಷ್ಟಿಯಾಗಿದೆ!<br><br><b>ಡಿಜಿಟಲ್ ID: <span style="color:red; font-size:20px;">${deliveryId}</span></b>`, "🛵");
                     });
                 });
             });
@@ -519,10 +514,10 @@
                     <p class="text-xs"><b>ತಂದೆಯ ಹೆಸರು:</b> ${boy.father || '-'}</p>
                     <p class="text-xs"><b>ಮೊಬೈಲ್:</b> ${boy.phone}</p>
                     <p class="text-xs"><b>ಸ್ಥಳ:</b> ${boy.city || 'ಶಹಾಪುರ'}, ${boy.taluk || ''} (Pin: ${boy.pincode || ''})</p>
-                    <div class="flex gap-2 pt-2">
-                        ${boy.selfie ? `<img src="${boy.selfie}" onclick="zoomImage(this.src)" class="w-20 h-20 object-cover rounded border cursor-pointer">` : ''}
-                        ${boy.aadharFront ? `<img src="${boy.aadharFront}" onclick="zoomImage(this.src)" class="w-20 h-20 object-cover rounded border cursor-pointer">` : ''}
-                        ${boy.aadharBack ? `<img src="${boy.aadharBack}" onclick="zoomImage(this.src)" class="w-20 h-20 object-cover rounded border cursor-pointer">` : ''}
+                    <div class="flex gap-2 pt-2 flex-wrap">
+                        ${boy.selfie ? `<div><p class="text-[10px] font-bold">ಸೆಲ್ಫಿ ಫೋಟೋ:</p><img src="${boy.selfie}" onclick="zoomImage(this.src)" class="w-20 h-20 object-cover rounded border cursor-pointer"></div>` : ''}
+                        ${boy.aadharFront ? `<div><p class="text-[10px] font-bold">ಆಧಾರ್ ಮುಂಭಾಗ:</p><img src="${boy.aadharFront}" onclick="zoomImage(this.src)" class="w-20 h-20 object-cover rounded border cursor-pointer"></div>` : ''}
+                        ${boy.aadharBack ? `<div><p class="text-[10px] font-bold">ಆಧಾರ್ ಹಿಂಭಾಗ:</p><img src="${boy.aadharBack}" onclick="zoomImage(this.src)" class="w-20 h-20 object-cover rounded border cursor-pointer"></div>` : ''}
                     </div>
                     <hr>
                     <p class="font-bold text-xs text-gray-800">ಮಾಡಿದ ಆರ್ಡರ್‌ಗಳ ಇತಿಹಾಸ:</p>
