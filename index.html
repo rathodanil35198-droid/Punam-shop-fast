@@ -164,7 +164,8 @@
     </div>
 
     <script>
-        const MASTER_SECRET_CODE = "9353444070";
+        // ರಹಸ್ಯ ಕೋಡ್ ಅನ್ನು ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡಿ ಅಥವಾ ನೇರವಾಗಿ ಕಾಣದಂತೆ ಸ್ಟೋರ್ ಮಾಡಲಾಗಿದೆ
+        const MASTER_SECRET_CODE = atob("OTM1MzQ0NDA3MA==");
         let activeTab = 'vendors';
         let deleteTarget = { type: '', id: null };
 
@@ -389,7 +390,7 @@
             document.getElementById('detail-drawer').classList.remove('hidden');
         }
 
-        // 3. ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ರೆಂಡರಿಂಗ್ & ನೋಂದಣಿ (ಸರಿಯಾದ ಇಮೇಜ್ ರೀಡಿಂಗ್ ಮತ್ತು ಐಡಿ ಜನರೇಷನ್)
+        // 3. ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ರೆಂಡರಿಂಗ್ & ನೋಂದಣಿ
         function openDeliveryRegModal() {
             document.getElementById('del-name').value = '';
             document.getElementById('del-father').value = '';
@@ -409,7 +410,6 @@
             document.getElementById('delivery-reg-modal').classList.add('hidden');
         }
 
-        // ಫೋಟೋಗಳನ್ನು ಸುಲಭವಾಗಿ ಮತ್ತು ವೇಗವಾಗಿ ಕನ್ವರ್ಟ್ ಮಾಡಲು ಸರಿಯಾದ ಫಂಕ್ಷನ್
         function convertFileToBase64(file, callback) {
             if (!file) {
                 callback("");
@@ -421,7 +421,7 @@
                 img.onload = function () {
                     let canvas = document.createElement('canvas');
                     let ctx = canvas.getContext('2d');
-                    let max_size = 600; // ಸೈಜ್ ದೊಡ್ಡದಾಗದಂತೆ ಮಿತಿಗೊಳಿಸುವುದು
+                    let max_size = 600;
                     let width = img.width;
                     let height = img.height;
                     
@@ -484,8 +484,8 @@
                         closeDeliveryRegModal();
                         renderDeliveryBoys();
                         
-                        // ಇಲ್ಲಿ 4 ಅಂಕಿಯ ಐಡಿ ಸ್ಪಷ್ಟವಾಗಿ ಕಾಣುವಂತೆ ಪಾಪ್‌ಅಪ್ ತೋರಿಸಲಾಗುತ್ತದೆ
-                        showModal("ಯಶಸ್ವಿ!", `ಡೆಲಿವರಿ ಬಾಯ್ ಖಾತೆ ಯಶಸ್ವಿಯಾಗಿ ಸೃಷ್ಟಿಯಾಗಿದೆ!<br><br><b>ನಿಮ್ಮ 4 ಅಂಕಿಯ ಡಿಜಿಟಲ್ ID: <span style="color:red; font-size:22px;">${deliveryId}</span></b>`, "🛵");
+                        // ಸಕ್ಸಸ್ ಪಾಪ್‌ಅಪ್‌ನಲ್ಲಿ 4 ಅಂಕಿಯ ಡಿಜಿಟಲ್ ID ಸ್ಪಷ್ಟವಾಗಿ ಕಾಣುವಂತೆ ಮಾಡಲಾಗಿದೆ
+                        showModal("ಯಶಸ್ವಿ!", `ಡೆಲಿವರಿ ಬಾಯ್ ಖಾತೆ ಯಶಸ್ವಿಯಾಗಿ ಸೃಷ್ಟಿಯಾಗಿದೆ!<br><br><b>ನಿಮ್ಮ 4 ಅಂಕಿಯ ಡಿಜಿಟಲ್ ID: <span style="color:red; font-size:24px;">${deliveryId}</span></b>`, "🛵");
                     });
                 });
             });
@@ -572,7 +572,6 @@
             document.getElementById('detail-drawer').classList.add('hidden');
         }
 
-        // ಡಿಲೀಟ್ ಮಾಡುವಾಗ ಕೋಡ್ ಪರಿಶೀಲನೆ
         function promptDelete(type, id) {
             deleteTarget = { type, id };
             document.getElementById('delete-code-input').value = '';
@@ -590,7 +589,7 @@
                 executeDelete();
             } else {
                 alert('ತಪ್ಪು ಕೋಡ್! ಡಿಲೀಟ್ ಮಾಡಲು ಸಾಧ್ಯವಿಲ್ಲ.');
-                document.getElementById('delete-code-input'].value = '';
+                document.getElementById('delete-code-input').value = '';
             }
         }
 
@@ -599,8 +598,7 @@
             if (type === 'vendor') {
                 localStorage.removeItem('currentVendor');
                 showModal("ಯಶಸ್ವಿ!", "ಅಂಗಡಿ ಮಾಲೀಕರ ಐಡಿ ಡಿಲೀಟ್ ಮಾಡಲಾಗಿದೆ.", "🗑️");
-            } else class = '';
-            if (type === 'customer') {
+            } else if (type === 'customer') {
                 let orders = JSON.parse(localStorage.getItem('market_orders')) || [];
                 orders = orders.filter(o => o.phone !== id);
                 localStorage.setItem('market_orders', JSON.stringify(orders));
@@ -621,7 +619,6 @@
             else if (activeTab === 'delivery') renderDeliveryBoys(query);
         }
 
-        // ಆಪ್ ಓಪನ್ ಆದ ತಕ್ಷಣ ಡೇಟಾ ಲೋಡ್ ಮಾಡುವುದು
         loadPanelData();
     </script>
 </body>
