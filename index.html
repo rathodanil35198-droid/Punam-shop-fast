@@ -1,259 +1,336 @@
 <!DOCTYPE html>
 <html lang="kn">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ನಮ್ಮ ಶಾಪುರ್ - ಗ್ರಾಹಕರ ಆಪ್ (Customer App)</title>
-    
-    <!-- Firebase SDKs (Firestore) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc, getDocs, setDoc, getDoc, serverTimestamp, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ನಮ್ಮ ಶಾಪುರ್ - ಮಾಸ್ಟರ್ ಅಡ್ಮಿನ್ ಪ್ಯಾನಲ್ | Master Panel</title>
+  <link rel="icon" type="image/png" sizes="192x192" href="AR_Taxi_Booking_Go_Fast_512x512.png">
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBvt2oBFM9EJEOwyJrfwUxS3TDfYi10WYE",
-            authDomain: "nammalocal-market.firebaseapp.com",
-            projectId: "nammalocal-market",
-            storageBucket: "nammalocal-market.appspot.com",
-            messagingSenderId: "1958228974",
-            appId: "1:1958228974:web:d87708410a0f0fb4f914ff"
-        };
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, deleteDoc, doc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        window.db = db;
-        window.collection = collection;
-        window.addDoc = addDoc;
-        window.setDoc = setDoc;
-        window.getDoc = getDoc;
-        window.onSnapshot = onSnapshot;
-        window.updateDoc = updateDoc;
-        window.doc = doc;
-        window.deleteDoc = deleteDoc;
-        window.getDocs = getDocs;
-        window.query = query;
-        window.where = where;
-        window.orderBy = orderBy;
-        window.serverTimestamp = serverTimestamp;
-    </script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAm3HFKu101wex1b025-zJZ2BJ_o1Xvw",
+      authDomain: "ar-taxi-booking-shahapur.firebaseapp.com",
+      projectId: "ar-taxi-booking-shahapur",
+      storageBucket: "ar-taxi-booking-shahapur.appspot.com",
+      messagingSenderId: "585815710897",
+      appId: "1:586815710897:web:ab7138b9c016843db95dsa"
+    };
 
-    <style>
-        :root {
-            --primary: #1e88e5;
-            --success: #4caf50;
-            --danger: #e53935;
-            --dark: #333;
-            --light: #f4f6f8;
-        }
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: var(--light); color: var(--dark); padding-bottom: 40px; }
+    window.db = db;
+    window.collection = collection;
+    window.onSnapshot = onSnapshot;
+    window.deleteDoc = deleteDoc;
+    window.doc = doc;
+    window.updateDoc = updateDoc;
+    window.getDocs = getDocs;
+  </script>
 
-        header { background-color: var(--primary); color: white; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .container { max-width: 600px; margin: 20px auto; padding: 0 15px; }
+  <style>
+    :root { --primary: #d32f2f; --secondary: #1976d2; --bg: #f4f6f8; --dark: #212121; --success: #388e3c; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--dark); padding: 10px; padding-bottom: 40px; }
 
-        h2 { border-bottom: 2px solid var(--primary); padding-bottom: 8px; margin-bottom: 15px; color: var(--primary); font-size: 18px; }
+    .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    header { background: var(--primary); color: white; padding: 12px; text-align: center; border-radius: 8px; margin-bottom: 12px; }
 
-        .grid-cust {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px; margin-top: 15px;
-        }
-        .card-cust { border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px; background: #fff; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .card-cust img { width: 100%; height: 110px; object-fit: cover; border-radius: 6px; }
-        
-        .btn { background: var(--primary); color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
-        .btn-success { background: var(--success); }
-        .btn-danger { background: var(--danger); }
+    /* Login Overlay */
+    #authOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px; }
+    .auth-box { background: white; padding: 25px; border-radius: 10px; width: 100%; max-width: 350px; text-align: center; }
+    .auth-box input { width: 100%; padding: 12px; margin: 12px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; text-align: center; }
 
-        .price-tag { color: #2e7d32; font-weight: bold; }
-        .old-price { text-decoration: line-through; color: #888; font-size: 12px; margin-right: 5px; }
+    /* Nav Buttons */
+    .master-nav { display: flex; gap: 6px; margin-bottom: 15px; }
+    .m-btn { flex: 1; padding: 10px 4px; border: none; background: #e0e0e0; border-radius: 6px; font-weight: bold; font-size: 0.75rem; cursor: pointer; text-align: center; }
+    .m-btn.active { background: var(--secondary); color: white; }
 
-        .order-item { border-left: 5px solid var(--primary); background: #fff; padding: 12px; margin-bottom: 12px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    /* Search Input */
+    .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 12px; font-size: 0.85rem; }
 
-        .route-tracker {
-            display: flex; justify-content: space-between; margin: 10px 0; padding: 8px;
-            background: #e3f2fd; border-radius: 6px; font-size: 10px; font-weight: bold; color: #0d47a1;
-        }
-        .route-step.active { color: #2e7d32; }
+    .card-box { background: #fafafa; border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 0.82rem; }
+    .btn { padding: 6px 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; font-size: 0.75rem; }
+    .btn-danger { background: #e53935; }
+    .btn-success { background: var(--success); }
 
-        /* Modal */
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000;
-        }
-        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; text-align: left; }
-        .form-group { margin-bottom: 12px; }
-        label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 13px; }
-        input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
-    </style>
+    /* Modal for Image Preview */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 10000; padding: 15px; }
+    .modal-content { background: white; padding: 20px; border-radius: 10px; max-width: 400px; width: 100%; text-align: center; max-height: 90vh; overflow-y: auto; }
+  </style>
 </head>
 <body>
 
+  <!-- Secure Password Overlay -->
+  <div id="authOverlay">
+    <div class="auth-box">
+      <h3>🔐 ಮಾಸ್ಟರ್ ಲಾಗಿನ್ ಕೋಡ್</h3>
+      <p style="font-size: 0.8rem; color: #666; margin-top: 5px;">ಮುಂದುವರಿಯಲು ರಹಸ್ಯ ಕೋಡ್ ನಮೂದಿಸಿ</p>
+      <input type="password" id="masterCodeInput" placeholder="ಪಾಸ್‌ವರ್ಡ್ ಹಾಕಿ">
+      <button class="btn btn-success" style="width:100%; padding:10px; font-size:0.9rem;" onclick="verifyMasterCode()">ಲಾಗಿನ್ ಮಾಡಿ</button>
+    </div>
+  </div>
+
+  <!-- Image Viewer Modal -->
+  <div id="imageModal" class="modal">
+    <div class="modal-content">
+      <h3>ಫೋಟೋ ವೀಕ್ಷಣೆ</h3>
+      <img id="modalImgSrc" src="" style="width:100%; max-height:250px; object-fit:contain; margin:10px 0; border-radius:6px;">
+      <div style="display:flex; gap:10px; margin-top:10px;">
+        <a id="downloadLink" href="" download="document.jpg" class="btn btn-success" style="flex:1; text-decoration:none; text-align:center; padding:8px;">ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ</a>
+        <button class="btn btn-danger" style="flex:1;" onclick="closeImageModal()">ಮುಚ್ಚಿ</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
     <header>
-        <h1>🛍️ ನಮ್ಮ ಶಾಪುರ್ - ಗ್ರಾಹಕರ ಮಾರುಕಟ್ಟೆ</h1>
-        <p>ಸ್ಥಳೀಯ ಅಂಗಡಿಗಳ ಆನ್‌ಲೈನ್ ಶಾಪಿಂಗ್</p>
+      <h2>👑 ಮಾಸ್ಟರ್ ಅಡ್ಮಿನ್ ಪ್ಯಾನಲ್</h2>
     </header>
 
-    <div class="container">
-        <h2>🛒 ಅಂಗಡಿಯಲ್ಲಿ ಲಭ್ಯವಿರುವ ವಸ್ತುಗಳು</h2>
-        <div id="customer-products-grid" class="grid-cust"></div>
-
-        <h2 style="margin-top:30px;">📜 ನನ್ನ ಆರ್ಡರ್‌ಗಳು ಹಾಗೂ ಲೈವ್ ರೂಟ್</h2>
-        <div id="customer-orders-list"></div>
+    <!-- Navigation Tabs -->
+    <div class="master-nav">
+      <button class="m-btn active" onclick="switchTab('shopsTab', this)">ಅಂಗಡಿ ಮಾಲೀಕರು</button>
+      <button class="m-btn" onclick="switchTab('deliveryTab', this)">ಡೆಲಿವರಿ ಬಾಯ್ಸ್</button>
+      <button class="m-btn" onclick="switchTab('customersTab', this)">ಗ್ರಾಹಕರು</button>
     </div>
 
-    <!-- BUY MODAL -->
-    <div id="buy-modal" class="modal">
-        <div class="modal-content" style="text-align:center;">
-            <h3 id="modal-prod-name">ಖರೀದಿಸಿ</h3>
-            <img id="modal-prod-img" src="" style="width:100%; height:130px; object-fit:cover; margin:10px 0; border-radius:6px;">
-            <p>ಪ್ರೆಸೆಂಟ್ ರೇಟು: <b>₹<span id="modal-prod-price"></span></b></p>
-            <button class="btn btn-success" style="width:100%; margin-top:10px;" onclick="showAddressScreen()">ಮುಂದೆ ಹೋಗಿ (ವಿಳಾಸ ಹಾಕಿ)</button>
-            <button class="btn btn-danger" style="width:100%; margin-top:5px;" onclick="closeModal('buy-modal')">ರದ್ದುಗೊಳಿಸಿ</button>
-        </div>
+    <!-- SEARCH BAR -->
+    <input type="text" id="masterSearch" class="search-input" placeholder="🔍 ಹೆಸರು ಅಥವಾ ಐಡಿ ಬಳಸಿ ಹುಡುಕಿ..." oninput="filterMasterData()">
+
+    <!-- TAB 1: SHOP OWNERS -->
+    <div id="shopsTab">
+      <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--secondary);">🏪 ಲಾಗಿನ್ ಆಗಿರುವ ಅಂಗಡಿ ಮಾಲೀಕರು</h3>
+      <div id="shopsListContainer"></div>
     </div>
 
-    <!-- ADDRESS FORM MODAL -->
-    <div id="address-modal" class="modal">
-        <div class="modal-content">
-            <h3>📍 ನಿಮ್ಮ ವಿಳಾಸ ವಿವರ ನಮೂದಿಸಿ</h3>
-            <form onsubmit="confirmFinalOrder(event)">
-                <div class="form-group"><label>ನಿಮ್ಮ ಹೆಸರು:</label><input type="text" id="cust-name" required placeholder="ಪೂರ್ಣ ಹೆಸರು"></div>
-                <div class="form-group"><label>ಮೊಬೈಲ್ ನಂಬರ್:</label><input type="tel" id="cust-phone" required placeholder="10 ಅಂಕಿಗಳ ನಂಬರ್"></div>
-                <div class="form-group"><label>ಊರು / ಬಡಾವಣೆ:</label><input type="text" id="cust-village" required placeholder="ಶಹಾಪುರ / ಊರು"></div>
-                <button type="submit" class="btn btn-success" style="width:100%;">ಆರ್ಡರ್ ಕನ್ಫರ್ಮ್ ಮಾಡಿ</button>
-                <button type="button" class="btn btn-danger" style="width:100%; margin-top:5px;" onclick="closeModal('address-modal')">ಹಿಂದಕ್ಕೆ</button>
-            </form>
-        </div>
+    <!-- TAB 2: DELIVERY BOYS -->
+    <div id="deliveryTab" style="display:none;">
+      <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--secondary);">🛵 ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ಪಟ್ಟಿ</h3>
+      <div id="deliveryListContainer"></div>
     </div>
 
-    <script>
-        let currentBuyProduct = null;
+    <!-- TAB 3: CUSTOMERS -->
+    <div id="customersTab" style="display:none;">
+      <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--secondary);">🛍️ ಗ್ರಾಹಕರ ಪಟ್ಟಿ</h3>
+      <div id="customersListContainer"></div>
+    </div>
+  </div>
 
-        window.addEventListener('DOMContentLoaded', () => {
-            // ಫೈರ್‌ಬೇಸ್ ಡೇಟಾ ಸಿಂಕ್ ಆರಂಭಿಸಲು ಸ್ವಲ್ಪ ವಿಳಂಬ ನೀಡಲಾಗಿದೆ
-            setTimeout(() => {
-                startCustomerSync();
-            }, 1000);
+  <script>
+    let allShops = [];
+    let allDeliveryBoys = [];
+    let allCustomers = [];
+    let allOrders = [];
+
+    function verifyMasterCode() {
+      const code = document.getElementById('masterCodeInput').value.trim();
+      if (code === "9353444070") {
+        document.getElementById('authOverlay').style.display = 'none';
+        loadMasterData();
+      } else {
+        alert("ತಪ್ಪು ಕೋಡ್! ದಯವಿಟ್ಟು ಸರಿಯಾದ ಕೋಡ್ ನಮೂದಿಸಿ.");
+      }
+    }
+
+    function switchTab(tabId, btn) {
+      document.getElementById('shopsTab').style.display = tabId === 'shopsTab' ? 'block' : 'none';
+      document.getElementById('deliveryTab').style.display = tabId === 'deliveryTab' ? 'block' : 'none';
+      document.getElementById('customersTab').style.display = tabId === 'customersTab' ? 'block' : 'none';
+
+      document.querySelectorAll('.m-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function loadMasterData() {
+      // Fetch Orders
+      window.onSnapshot(window.collection(window.db, "orders"), (snap) => {
+        allOrders = [];
+        snap.forEach(d => allOrders.push({ id: d.id, ...d.data() }));
+        processDataViews();
+      });
+
+      // Fetch Shop Owners
+      window.onSnapshot(window.collection(window.db, "shop_owners"), (snap) => {
+        allShops = [];
+        snap.forEach(d => allShops.push({ docId: d.id, ...d.data() }));
+        renderShops(allShops);
+      });
+
+      // Fetch Delivery Boys
+      window.onSnapshot(window.collection(window.db, "delivery_boys"), (snap) => {
+        allDeliveryBoys = [];
+        snap.forEach(d => allDeliveryBoys.push({ docId: d.id, ...d.data() }));
+        renderDeliveryBoys(allDeliveryBoys);
+      });
+
+      // Fetch Customers (from Orders unique customers)
+      processCustomers();
+    }
+
+    function processCustomers() {
+      window.onSnapshot(window.collection(window.db, "orders"), (snap) => {
+        let custMap = {};
+        snap.forEach(d => {
+          let o = d.data();
+          if (o.customer && o.customer.phone) {
+            let phone = o.customer.phone;
+            if (!custMap[phone]) {
+              custMap[phone] = { name: o.customer.name, phone: phone, village: o.customer.village, ordersCount: 0, returnsCount: 0 };
+            }
+            custMap[phone].ordersCount++;
+            if (o.status === 'RETURNED') custMap[phone].returnsCount++;
+          }
         });
+        allCustomers = Object.values(custMap);
+        renderCustomers(allCustomers);
+      });
+    }
 
-        function startCustomerSync() {
-            // ಪ್ರಾಡಕ್ಟ್ಸ್ ರಿಯಲ್-ಟೈಮ್ ಸಿಂಕ್
-            window.onSnapshot(window.collection(window.db, "products"), (snapshot) => {
-                let products = [];
-                snapshot.forEach(docSnap => {
-                    products.push({ id: docSnap.id, ...docSnap.data() });
-                });
-                renderCustomerProducts(products);
-                window.cachedProducts = products;
-            });
+    function processDataViews() {
+      renderShops(allShops);
+      renderDeliveryBoys(allDeliveryBoys);
+    }
 
-            // ಆರ್ಡರ್ಸ್ ರಿಯಲ್-ಟೈಮ್ ಸಿಂಕ್
-            window.onSnapshot(window.collection(window.db, "orders"), (snapshot) => {
-                let orders = [];
-                snapshot.forEach(docSnap => {
-                    orders.push({ id: docSnap.id, ...docSnap.data() });
-                });
-                orders.sort((a, b) => (b.timestamp?.toMillis?.() || 0) - (a.timestamp?.toMillis?.() || 0));
-                renderCustomerOrders(orders);
-            });
+    function renderShops(list) {
+      const container = document.getElementById('shopsListContainer');
+      if (list.length === 0) {
+        container.innerHTML = '<p style="color:#777; text-align:center; padding:10px;">ಯಾವುದೇ ಅಂಗಡಿ ಮಾಲೀಕರಿಲ್ಲ.</p>';
+        return;
+      }
+
+      container.innerHTML = list.map(s => {
+        let shopOrders = allOrders.filter(o => o.shopId === s.id);
+        let totalOrders = shopOrders.length;
+        let returns = shopOrders.filter(o => o.status === 'RETURNED').length;
+        let earnings = shopOrders.reduce((acc, curr) => curr.status === 'DELIVERED' ? acc + Number(curr.totalPrice || 0) : acc, 0);
+
+        return `
+          <div class="card-box">
+            <div style="display:flex; gap:10px; align-items:center; margin-bottom:6px;">
+              <img src="${s.photo || 'https://via.placeholder.com/60'}" style="width:50px; height:50px; object-fit:cover; border-radius:50%; border:1px solid #ccc;">
+              <div>
+                <b>${s.shopName}</b> (${s.shopType || 'General'})<br>
+                ಮಾಲೀಕರು: ${s.name} | ಫೋನ್: ${s.phone}<br>
+                <b>ID: ${s.id}</b> | ಸ್ಥಳ: ${s.taluk}, ${s.district}
+              </div>
+            </div>
+            <div style="background:#e8f4fd; padding:6px; border-radius:4px; margin:6px 0;">
+              📊 <b>ತಿಂಗಳ ವರದಿ:</b> ಆರ್ಡರ್ಸ್: ${totalOrders} | ರಿಟರ್ನ್: ${returns} | ಒಟ್ಟು ಸಂಪಾದನೆ: ₹${earnings}
+            </div>
+            <div style="margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
+              <select onchange="updateMembership('${s.docId}', this.value)" style="padding:4px; font-size:0.75rem;">
+                <option value="">-- ಮೆಂಬರ್‌ಶಿಪ್ ಆಯ್ಕೆಮಾಡಿ --</option>
+                <option value="3 Months">3 ತಿಂಗಳು</option>
+                <option value="6 Months">6 ತಿಂಗಳು</option>
+                <option value="9 Months">9 ತಿಂಗಳು</option>
+                <option value="1 Year">1 ವರ್ಷ</option>
+              </select>
+              <span style="font-size:0.7rem; font-weight:bold; color:var(--success);">${s.membership || 'ಪೇಮೆಂಟ್ ಪೆಂಡಿಂಗ್'}</span>
+              <button class="btn btn-danger" onclick="deleteRecord('shop_owners', '${s.docId}', 'ಅಂಗಡಿ ಮಾಲೀಕ')">ಡಿಲೀಟ್</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderDeliveryBoys(list) {
+      const container = document.getElementById('deliveryListContainer');
+      if (list.length === 0) {
+        container.innerHTML = '<p style="color:#777; text-align:center; padding:10px;">ಯಾವುದೇ ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ಇಲ್ಲ.</p>';
+        return;
+      }
+
+      container.innerHTML = list.map(db => {
+        let dbOrders = allOrders; // All system orders for commission check
+        let deliveredCount = dbOrders.filter(o => o.status === 'DELIVERED' || o.status === 'STEP_4').length;
+        let returnedCount = dbOrders.filter(o => o.status === 'RETURNED').length;
+        let totalRevenue = dbOrders.reduce((acc, curr) => curr.status === 'DELIVERED' ? acc + Number(curr.totalPrice || 0) : acc, 0);
+        let commission5 = Math.round(totalRevenue * 0.05);
+
+        return `
+          <div class="card-box">
+            <div style="display:flex; gap:10px; align-items:center; margin-bottom:6px;">
+              <img src="${db.selfie || 'https://via.placeholder.com/60'}" style="width:50px; height:50px; object-fit:cover; border-radius:50%; border:1px solid #ccc; cursor:pointer;" onclick="openImageModal('${db.selfie}')" title="ದೊಡ್ಡದಾಗಿ ನೋಡಿ">
+              <div>
+                <b>${db.name}</b> (ತಂದೆ: ${db.fatherName})<br>
+                ಫೋನ್: ${db.phone} | <b>ID: ${db.id}</b><br>
+                ಊರು: ${db.village}, ${db.taluk}
+              </div>
+            </div>
+            <div style="display:flex; gap:6px; margin:6px 0;">
+              <button class="btn" style="background:#1976d2; font-size:0.65rem;" onclick="openImageModal('${db.aadhaarFront}')">ಆಧಾರ್ ಫ್ರಂಟ್</button>
+              <button class="btn" style="background:#1976d2; font-size:0.65rem;" onclick="openImageModal('${db.aadhaarBack}')">ಆಧಾರ್ ಬ್ಯಾಕ್</button>
+              <button class="btn" style="background:#1976d2; font-size:0.65rem;" onclick="openImageModal('${db.selfie}')">ಸೆಲ್ಫಿ ಫೋಟೋ</button>
+            </div>
+            <div style="background:#f1f8e9; padding:6px; border-radius:4px; font-size:0.75rem;">
+              📦 <b>ತಿಂಗಳ ವಿಶ್ಲೇಷಣೆ:</b> ಡೆಲಿವರಿ: ${deliveredCount} | ರಿಟರ್ನ್: ${returnedCount} | 5% ಕಮಿಷನ್: <b>₹${commission5}</b>
+            </div>
+            <div style="text-align:right; margin-top:6px;">
+              <button class="btn btn-danger" onclick="deleteRecord('delivery_boys', '${db.docId}', 'ಡೆಲಿವರಿ ಬಾಯ್')">ಡಿಲೀಟ್ ಮಾಡಿ</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderCustomers(list) {
+      const container = document.getElementById('customersListContainer');
+      if (list.length === 0) {
+        container.innerHTML = '<p style="color:#777; text-align:center; padding:10px;">ಯಾವುದೇ ಗ್ರಾಹಕರಿಲ್ಲ.</p>';
+        return;
+      }
+
+      container.innerHTML = list.map(c => `
+        <div class="card-box">
+          <b>ಗ್ರಾಹಕರು:</b> ${c.name} (${c.phone})<br>
+          ಊರು: ${c.village}<br>
+          <b>ಖರೀದಿ ಮಾಡಿರುವ ಆರ್ಡರ್ಸ್:</b> ${c.ordersCount} | <b>ರಿಟರ್ನ್ ಕಳಿಸಿರುವುದು:</b> ${c.returnsCount}
+        </div>
+      `).join('');
+    }
+
+    async function updateMembership(docId, plan) {
+      if (!plan) return;
+      try {
+        await window.updateDoc(window.doc(window.db, "shop_owners", docId), { membership: `ಪೇಮೆಂಟ್ ಸಕ್ಸೆಸ್‌ಫುಲ್ (${plan})` });
+        alert("ಮೆಂಬರ್‌ಶಿಪ್ ಯಶಸ್ವಿಯಾಗಿ ಅಪ್‌ಡೇಟ್ ಆಗಿದೆ!");
+      } catch(e) {
+        alert("Error: " + e.message);
+      }
+    }
+
+    async function deleteRecord(collectionName, docId, roleName) {
+      if (confirm(`⚠️ ಎಚ್ಚರಿಕೆ: ಈ ${roleName} ಅನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲು ಬಯಸುವಿರಾ?\n\nOK ಒತ್ತಿದರೆ ಇವರ ಐಡಿ ಮತ್ತು ಲಾಗಿನ್ ರದ್ದಾಗುತ್ತದೆ.`)) {
+        try {
+          await window.deleteDoc(window.doc(window.db, collectionName, docId));
+          alert(`${roleName} ಯಶಸ್ವಿಯಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲಾಗಿದೆ.`);
+        } catch(e) {
+          alert("Error: " + e.message);
         }
+      }
+    }
 
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function openImageModal(imgSrc) {
+      document.getElementById('modalImgSrc').src = imgSrc;
+      document.getElementById('downloadLink').href = imgSrc;
+      document.getElementById('imageModal').style.display = 'flex';
+    }
 
-        function openBuyModal(prodId) {
-            currentBuyProduct = window.cachedProducts.find(p => p.id == prodId);
-            if (currentBuyProduct) {
-                document.getElementById('modal-prod-name').innerText = currentBuyProduct.name;
-                document.getElementById('modal-prod-img').src = currentBuyProduct.photo;
-                document.getElementById('modal-prod-price').innerText = currentBuyProduct.price;
-                document.getElementById('buy-modal').style.display = 'flex';
-            }
-        }
+    function closeImageModal() {
+      document.getElementById('imageModal').style.display = 'none';
+    }
 
-        function showAddressScreen() {
-            closeModal('buy-modal');
-            document.getElementById('address-modal').style.display = 'flex';
-        }
-
-        async function confirmFinalOrder(event) {
-            event.preventDefault();
-            const orderId = 'ORD_' + Math.floor(1000 + Math.random() * 9000);
-            const newOrder = {
-                orderId: orderId,
-                timestamp: window.serverTimestamp(),
-                productName: currentBuyProduct.name,
-                productPhoto: currentBuyProduct.photo,
-                totalPrice: currentBuyProduct.price,
-                shopId: currentBuyProduct.shopId,
-                customer: {
-                    name: document.getElementById('cust-name').value.trim(),
-                    phone: document.getElementById('cust-phone').value.trim(),
-                    village: document.getElementById('cust-village').value.trim()
-                },
-                status: 'NEW'
-            };
-
-            try {
-                await window.addDoc(window.collection(window.db, "orders"), newOrder);
-                closeModal('address-modal');
-                alert("🔔 ನಿಮ್ಮ ಆರ್ಡರ್ ಕನ್ಫರ್ಮ್ ಆಗಿದೆ! ಅಂಗಡಿ ಮಾಲೀಕರಿಗೆ ತಲುಪಿಸಲಾಗಿದೆ.");
-            } catch (err) {
-                alert("Error: " + err.message);
-            }
-        }
-
-        function renderCustomerProducts(products) {
-            const grid = document.getElementById('customer-products-grid');
-            if (products.length === 0) {
-                grid.innerHTML = '<p style="font-size:12px; color:#777;">ಪ್ರಸ್ತುತ ಯಾವುದೇ ವಸ್ತುಗಳು ಲಭ್ಯವಿಲ್ಲ.</p>';
-                return;
-            }
-            grid.innerHTML = products.map(p => `
-                <div class="card-cust">
-                    <img src="${p.photo}">
-                    <div style="font-weight:bold; margin:6px 0; font-size:13px;">${p.name}</div>
-                    <div><span class="old-price">₹${p.oldPrice}</span> <span class="price-tag">₹${p.price}</span></div>
-                    <button class="btn btn-success" style="width:100%; margin-top:8px; padding:6px; font-size:12px;" onclick="openBuyModal('${p.id}')">ಖರೀದಿಸಿ</button>
-                </div>
-            `).join('');
-        }
-
-        function renderCustomerOrders(orders) {
-            const listDiv = document.getElementById('customer-orders-list');
-            if (orders.length === 0) {
-                listDiv.innerHTML = '<p style="font-size:12px; color:#777;">ನೀವು ಇನ್ನು ಯಾವುದೇ ಆರ್ಡರ್ ಮಾಡಿಲ್ಲ.</p>';
-                return;
-            }
-            listDiv.innerHTML = orders.map(o => {
-                let s1 = 'active';
-                let s2 = ['CONFIRMED', 'PACKING', 'DELIVERED'].includes(o.status) ? 'active' : '';
-                let s3 = ['PACKING', 'DELIVERED'].includes(o.status) ? 'active' : '';
-                let s4 = o.status === 'DELIVERED' ? 'active' : '';
-
-                return `
-                    <div class="order-item">
-                        <h4 style="font-size:14px;">ಆರ್ಡರ್: ${o.productName} - ₹${o.totalPrice}</h4>
-                        <p style="font-size:11px; color:#666;">ಆರ್ಡರ್ ಐಡಿ: ${o.orderId}</p>
-                        
-                        <div class="route-tracker">
-                            <span class="route-step ${s1}">1. ಕನ್ಫರ್ಮ್</span> > 
-                            <span class="route-step ${s2}">2. ಪ್ಯಾಕಿಂಗ್</span> > 
-                            <span class="route-step ${s3}">3. ಡೆಲಿವರಿ</span> > 
-                            <span class="route-step ${s4}">4. ತಲುಪಿದೆ</span>
-                        </div>
-                        
-                        <p style="font-size:12px; color:#2e7d32; font-weight:bold;">
-                            ${o.status === 'NEW' ? '⏳ ಅಂಗಡಿ ಮಾಲೀಕರ ಒಪ್ಪಿಗೆಗಾಗಿ ಕಾಯುತ್ತಿದೆ...' : ''}
-                            ${o.status === 'CONFIRMED' ? '✅ ಅಂಗಡಿಯವರು ಆರ್ಡರ್ ಕನ್ಫರ್ಮ್ ಮಾಡಿದ್ದಾರೆ.' : ''}
-                            ${o.status === 'PACKING' ? '📦 ನಿಮ್ಮ ಆರ್ಡರ್ ಪ್ಯಾಕಿಂಗ್ ಆಗಿ ಡೆಲಿವರಿಗೆ ಸಿದ್ಧವಾಗಿದೆ.' : ''}
-                            ${o.status === 'DELIVERED' ? '🎉 ನಿಮ್ಮ ಆರ್ಡರ್ ಯಶಸ್ವಿಯಾಗಿ ತಲುಪಿದೆ!' : ''}
-                        </p>
-                    </div>
-                `;
-            }).join('');
-        }
-    </script>
+    function filterMasterData() {
+      const q = document.getElementById('masterSearch').value.toLowerCase();
+      renderShops(allShops.filter(s => s.name.toLowerCase().includes(q) || s.id.includes(q) || s.shopName.toLowerCase().includes(q)));
+      renderDeliveryBoys(allDeliveryBoys.filter(db => db.name.toLowerCase().includes(q) || db.id.includes(q)));
+      renderCustomers(allCustomers.filter(c => c.name.toLowerCase().includes(q) || c.phone.includes(q)));
+    }
+  </script>
 </body>
 </html>
