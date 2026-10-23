@@ -46,19 +46,20 @@
     .auth-box input { width: 100%; padding: 12px; margin: 12px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; text-align: center; }
 
     /* Nav Buttons */
-    .master-nav { display: flex; gap: 6px; margin-bottom: 15px; }
-    .m-btn { flex: 1; padding: 10px 4px; border: none; background: #e0e0e0; border-radius: 6px; font-weight: bold; font-size: 0.75rem; cursor: pointer; text-align: center; }
+    .master-nav { display: flex; gap: 4px; margin-bottom: 15px; flex-wrap: wrap; }
+    .m-btn { flex: 1; min-width: 22%; padding: 8px 2px; border: none; background: #e0e0e0; border-radius: 6px; font-weight: bold; font-size: 0.7rem; cursor: pointer; text-align: center; }
     .m-btn.active { background: var(--secondary); color: white; }
 
     /* Search Input */
     .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 12px; font-size: 0.85rem; }
 
     .card-box { background: #fafafa; border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 0.82rem; }
-    .btn { padding: 6px 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; font-size: 0.75rem; }
+    .btn { padding: 6px 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; font-size: 0.75rem; text-decoration: none; display: inline-block; text-align: center; }
     .btn-danger { background: #e53935; }
     .btn-success { background: var(--success); }
+    .btn-primary { background: var(--secondary); }
 
-    /* Modal for Image Preview */
+    /* Modal for Image / QR Preview */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 10000; padding: 15px; }
     .modal-content { background: white; padding: 20px; border-radius: 10px; max-width: 400px; width: 100%; text-align: center; max-height: 90vh; overflow-y: auto; }
   </style>
@@ -75,11 +76,13 @@
     </div>
   </div>
 
-  <!-- Image Viewer Modal -->
+  <!-- Image & QR Viewer Modal -->
   <div id="imageModal" class="modal">
     <div class="modal-content">
-      <h3>ಫೋಟೋ ವೀಕ್ಷಣೆ</h3>
-      <img id="modalImgSrc" src="" style="width:100%; max-height:250px; object-fit:contain; margin:10px 0; border-radius:6px;">
+      <h3 id="modalTitle">ಫೋಟೋ / ಕ್ಯೂಆರ್ ವೀಕ್ಷಣೆ</h3>
+      <div id="modalBodyContent">
+        <img id="modalImgSrc" src="" style="width:100%; max-height:250px; object-fit:contain; margin:10px 0; border-radius:6px;">
+      </div>
       <div style="display:flex; gap:10px; margin-top:10px;">
         <a id="downloadLink" href="" download="document.jpg" class="btn btn-success" style="flex:1; text-decoration:none; text-align:center; padding:8px;">ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ</a>
         <button class="btn btn-danger" style="flex:1;" onclick="closeImageModal()">ಮುಚ್ಚಿ</button>
@@ -97,6 +100,7 @@
       <button class="m-btn active" onclick="switchTab('shopsTab', this)">ಅಂಗಡಿ ಮಾಲೀಕರು</button>
       <button class="m-btn" onclick="switchTab('deliveryTab', this)">ಡೆಲಿವರಿ ಬಾಯ್ಸ್</button>
       <button class="m-btn" onclick="switchTab('customersTab', this)">ಗ್ರಾಹಕರು</button>
+      <button class="m-btn" onclick="switchTab('returnsTab', this)">ರಿಟರ್ನ್/ಅರ್ಜೆಂಟ್</button>
     </div>
 
     <!-- SEARCH BAR -->
@@ -119,6 +123,12 @@
       <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--secondary);">🛍️ ಗ್ರಾಹಕರ ಪಟ್ಟಿ</h3>
       <div id="customersListContainer"></div>
     </div>
+
+    <!-- TAB 4: RETURNS & URGENT ORDERS -->
+    <div id="returnsTab" style="display:none;">
+      <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--secondary);">🔄 ರಿಟರ್ನ್ ಮತ್ತು ಪಿಕ್ ಅಪ್ ಆದ ಆರ್ಡರ್‌ಗಳು</h3>
+      <div id="returnsListContainer"></div>
+    </div>
   </div>
 
   <script>
@@ -126,6 +136,15 @@
     let allDeliveryBoys = [];
     let allCustomers = [];
     let allOrders = [];
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // Handle Mobile Back Button history state so app doesn't close unexpectedly
+      window.history.pushState({ page: 'master' }, '', '');
+      window.addEventListener('popstate', (event) => {
+        // Prevent accidental exit by maintaining state
+        window.history.pushState({ page: 'master' }, '', '');
+      });
+    });
 
     function verifyMasterCode() {
       const code = document.getElementById('masterCodeInput').value.trim();
@@ -141,6 +160,7 @@
       document.getElementById('shopsTab').style.display = tabId === 'shopsTab' ? 'block' : 'none';
       document.getElementById('deliveryTab').style.display = tabId === 'deliveryTab' ? 'block' : 'none';
       document.getElementById('customersTab').style.display = tabId === 'customersTab' ? 'block' : 'none';
+      document.getElementById('returnsTab').style.display = tabId === 'returnsTab' ? 'block' : 'none';
 
       document.querySelectorAll('.m-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
@@ -168,7 +188,6 @@
         renderDeliveryBoys(allDeliveryBoys);
       });
 
-      // Fetch Customers (from Orders unique customers)
       processCustomers();
     }
 
@@ -180,10 +199,10 @@
           if (o.customer && o.customer.phone) {
             let phone = o.customer.phone;
             if (!custMap[phone]) {
-              custMap[phone] = { name: o.customer.name, phone: phone, village: o.customer.village, ordersCount: 0, returnsCount: 0 };
+              custMap[phone] = { docId: d.id, name: o.customer.name, phone: phone, village: o.customer.village, ordersCount: 0, returnsCount: 0 };
             }
             custMap[phone].ordersCount++;
-            if (o.status === 'RETURNED') custMap[phone].returnsCount++;
+            if (o.status === 'RETURNED' || o.isReturned) custMap[phone].returnsCount++;
           }
         });
         allCustomers = Object.values(custMap);
@@ -194,6 +213,7 @@
     function processDataViews() {
       renderShops(allShops);
       renderDeliveryBoys(allDeliveryBoys);
+      renderReturnsTab(allOrders);
     }
 
     function renderShops(list) {
@@ -205,9 +225,19 @@
 
       container.innerHTML = list.map(s => {
         let shopOrders = allOrders.filter(o => o.shopId === s.id);
-        let totalOrders = shopOrders.length;
-        let returns = shopOrders.filter(o => o.status === 'RETURNED').length;
-        let earnings = shopOrders.reduce((acc, curr) => curr.status === 'DELIVERED' ? acc + Number(curr.totalPrice || 0) : acc, 0);
+        let totalOrdersCount = shopOrders.length;
+        let returnsCount = shopOrders.filter(o => o.status === 'RETURNED' || o.isReturned).length;
+        
+        // Total money calculations with 15% commission deduction and minus returned amount
+        let grossEarnings = shopOrders.reduce((acc, curr) => (curr.status === 'DELIVERED' || curr.status === 'STEP_4') ? acc + Number(curr.totalPrice || 0) : acc, 0);
+        let returnDeduction = shopOrders.reduce((acc, curr) => (curr.status === 'RETURNED' || curr.isReturned) ? acc + Number(curr.totalPrice || 0) : acc, 0);
+        
+        let netAfterReturn = grossEarnings - returnDeduction;
+        let commission15 = Math.round(netAfterReturn * 0.15);
+        let payableToShop = netAfterReturn - commission15;
+        if (payableToShop < 0) payableToShop = 0;
+
+        let shopPaymentStatus = s.paymentStatus || 'PENDING'; // PENDING or SUCCESS
 
         return `
           <div class="card-box">
@@ -219,18 +249,20 @@
                 <b>ID: ${s.id}</b> | ಸ್ಥಳ: ${s.taluk}, ${s.district}
               </div>
             </div>
-            <div style="background:#e8f4fd; padding:6px; border-radius:4px; margin:6px 0;">
-              📊 <b>ತಿಂಗಳ ವರದಿ:</b> ಆರ್ಡರ್ಸ್: ${totalOrders} | ರಿಟರ್ನ್: ${returns} | ಒಟ್ಟು ಸಂಪಾದನೆ: ₹${earnings}
+            <div style="background:#e8f4fd; padding:8px; border-radius:6px; margin:6px 0; font-size:0.78rem; line-height:1.4;">
+              📊 <b>ಮಾಸಿಕ ಲೆಕ್ಕಾಚಾರ:</b><br>
+              • ಒಟ್ಟು ಆರ್ಡರ್‌ಗಳು: ${totalOrdersCount} | ರಿಟರ್ನ್ ಆದವು: ${returnsCount}<br>
+              • ಇವತ್ತಿನ/ಒಟ್ಟು ಹಣ: ₹${grossEarnings} (ರಿಟರ್ನ್ ಕಡಿತ: -₹${returnDeduction})<br>
+              • 15% ಕಮಿಷನ್: ₹${commission15}<br>
+              • <b>ಅಂಗಡಿ ಮಾಲೀಕರಿಗೆ ನೀಡಬೇಕಾದ ಮೊತ್ತ: ₹${payableToShop}</b>
             </div>
-            <div style="margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
-              <select onchange="updateMembership('${s.docId}', this.value)" style="padding:4px; font-size:0.75rem;">
-                <option value="">-- ಮೆಂಬರ್‌ಶಿಪ್ ಆಯ್ಕೆಮಾಡಿ --</option>
-                <option value="3 Months">3 ತಿಂಗಳು</option>
-                <option value="6 Months">6 ತಿಂಗಳು</option>
-                <option value="9 Months">9 ತಿಂಗಳು</option>
-                <option value="1 Year">1 ವರ್ಷ</option>
-              </select>
-              <span style="font-size:0.7rem; font-weight:bold; color:var(--success);">${s.membership || 'ಪೇಮೆಂಟ್ ಪೆಂಡಿಂಗ್'}</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+              <span style="font-size:0.75rem; font-weight:bold; color:${shopPaymentStatus === 'SUCCESS' ? 'var(--success)' : '#d32f2f'};">
+                ${shopPaymentStatus === 'SUCCESS' ? '✅ ಪೇಮೆಂಟ್ ಸಕ್ಸಸ್‌ಫುಲ್ ಆಗಿದೆ' : '⚠️ ಪೇಮೆಂಟ್ ಪೆಂಡಿಂಗ್‌ನಲ್ಲಿದೆ (2-3 ದಿನಗಳು)'}
+              </span>
+              ${shopPaymentStatus !== 'SUCCESS' ? `
+                <button class="btn btn-success" onclick="markShopPaymentSuccess('${s.docId}')">ಪೇಮೆಂಟ್ ಸಕ್ಸಸ್ ಮಾಡಿ</button>
+              ` : ''}
               <button class="btn btn-danger" onclick="deleteRecord('shop_owners', '${s.docId}', 'ಅಂಗಡಿ ಮಾಲೀಕ')">ಡಿಲೀಟ್</button>
             </div>
           </div>
@@ -246,16 +278,16 @@
       }
 
       container.innerHTML = list.map(db => {
-        let dbOrders = allOrders; // All system orders for commission check
+        let dbOrders = allOrders; 
         let deliveredCount = dbOrders.filter(o => o.status === 'DELIVERED' || o.status === 'STEP_4').length;
-        let returnedCount = dbOrders.filter(o => o.status === 'RETURNED').length;
-        let totalRevenue = dbOrders.reduce((acc, curr) => curr.status === 'DELIVERED' ? acc + Number(curr.totalPrice || 0) : acc, 0);
+        let returnedCount = dbOrders.filter(o => o.status === 'RETURNED' || o.isReturned).length;
+        let totalRevenue = dbOrders.reduce((acc, curr) => (curr.status === 'DELIVERED' || curr.status === 'STEP_4') ? acc + Number(curr.totalPrice || 0) : acc, 0);
         let commission5 = Math.round(totalRevenue * 0.05);
 
         return `
           <div class="card-box">
             <div style="display:flex; gap:10px; align-items:center; margin-bottom:6px;">
-              <img src="${db.selfie || 'https://via.placeholder.com/60'}" style="width:50px; height:50px; object-fit:cover; border-radius:50%; border:1px solid #ccc; cursor:pointer;" onclick="openImageModal('${db.selfie}')" title="ದೊಡ್ಡದಾಗಿ ನೋಡಿ">
+              <img src="${db.selfie || 'https://via.placeholder.com/60'}" style="width:50px; height:50px; object-fit:cover; border-radius:50%; border:1px solid #ccc; cursor:pointer;" onclick="openImageModal('${db.selfie}', 'ಸೆಲ್ಫಿ ಫೋಟೋ')" title="ದೊಡ್ಡದಾಗಿ ನೋಡಿ">
               <div>
                 <b>${db.name}</b> (ತಂದೆ: ${db.fatherName})<br>
                 ಫೋನ್: ${db.phone} | <b>ID: ${db.id}</b><br>
@@ -263,12 +295,12 @@
               </div>
             </div>
             <div style="display:flex; gap:6px; margin:6px 0;">
-              <button class="btn" style="background:#1976d2; font-size:0.65rem;" onclick="openImageModal('${db.aadhaarFront}')">ಆಧಾರ್ ಫ್ರಂಟ್</button>
-              <button class="btn" style="background:#1976d2; font-size:0.65rem;" onclick="openImageModal('${db.aadhaarBack}')">ಆಧಾರ್ ಬ್ಯಾಕ್</button>
-              <button class="btn" style="background:#1976d2; font-size:0.65rem;" onclick="openImageModal('${db.selfie}')">ಸೆಲ್ಫಿ ಫೋಟೋ</button>
+              <button class="btn btn-primary" style="font-size:0.65rem;" onclick="openImageModal('${db.aadhaarFront}', 'ಆಧಾರ್ ಫ್ರಂಟ್')">ಆಧಾರ್ ಫ್ರಂಟ್</button>
+              <button class="btn btn-primary" style="font-size:0.65rem;" onclick="openImageModal('${db.aadhaarBack}', 'ಆಧಾರ್ ಬ್ಯಾಕ್')">ಆಧಾರ್ ಬ್ಯಾಕ್</button>
+              <button class="btn btn-primary" style="font-size:0.65rem;" onclick="openImageModal('${db.selfie}', 'ಸೆಲ್ಫಿ ಫೋಟೋ')">ಸೆಲ್ಫಿ</button>
             </div>
             <div style="background:#f1f8e9; padding:6px; border-radius:4px; font-size:0.75rem;">
-              📦 <b>ತಿಂಗಳ ವಿಶ್ಲೇಷಣೆ:</b> ಡೆಲಿವರಿ: ${deliveredCount} | ರಿಟರ್ನ್: ${returnedCount} | 5% ಕಮಿಷನ್: <b>₹${commission5}</b>
+              📦 <b>ತಿಂಗಳ ವಿಶ್ಲೇಷಣೆ:</b> ಡೆಲಿವರಿ ಕೊಟ್ಟಿದ್ದು: ${deliveredCount} | ರಿಟರ್ನ್ ಪಡೆದಿದ್ದು: ${returnedCount} | <b>5% ಕಮಿಷನ್: ₹${commission5}</b>
             </div>
             <div style="text-align:right; margin-top:6px;">
               <button class="btn btn-danger" onclick="deleteRecord('delivery_boys', '${db.docId}', 'ಡೆಲಿವರಿ ಬಾಯ್')">ಡಿಲೀಟ್ ಮಾಡಿ</button>
@@ -290,15 +322,82 @@
           <b>ಗ್ರಾಹಕರು:</b> ${c.name} (${c.phone})<br>
           ಊರು: ${c.village}<br>
           <b>ಖರೀದಿ ಮಾಡಿರುವ ಆರ್ಡರ್ಸ್:</b> ${c.ordersCount} | <b>ರಿಟರ್ನ್ ಕಳಿಸಿರುವುದು:</b> ${c.returnsCount}
+          <div style="text-align:right; margin-top:6px;">
+            <button class="btn btn-danger" onclick="deleteCustomerRecord('${c.phone}')">ಗ್ರಾಹಕರನ್ನು ಬ್ಲಾಕ್ / ಡಿಲೀಟ್ ಮಾಡಿ</button>
+          </div>
         </div>
       `).join('');
     }
 
-    async function updateMembership(docId, plan) {
-      if (!plan) return;
+    function renderReturnsTab(orders) {
+      const container = document.getElementById('returnsListContainer');
+      // Filter orders that are requested for return or picked up by delivery boy
+      let returnOrders = orders.filter(o => o.isReturned || o.status === 'RETURNED' || o.returnStatus === 'RETURN_REQUESTED' || o.returnStatus === 'PICKED_UP_BY_DBOY');
+
+      if (returnOrders.length === 0) {
+        container.innerHTML = '<p style="color:#777; text-align:center; padding:10px;">ಯಾವುದೇ ರಿಟರ್ನ್ ಅಥವಾ ಪಿಕ್-ಅಪ್ ಆರ್ಡರ್‌ಗಳಿಲ್ಲ.</p>';
+        return;
+      }
+
+      container.innerHTML = returnOrders.map(o => {
+        let isPaymentSuccess = o.paymentStatus === 'SUCCESS';
+        let upiLink = `upi://pay?pa=merchant@upi&pn=NamahShapur&am=${o.totalPrice}&cu=INR`;
+        let qrCodeImg = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiLink)}`;
+
+        return `
+          <div class="card-box" style="border-left: 4px solid #d32f2f;">
+            <div style="display:flex; gap:10px; align-items:center;">
+              <img src="${o.productPhoto || 'https://via.placeholder.com/60'}" style="width:55px; height:55px; object-fit:cover; border-radius:6px;">
+              <div>
+                <b>${o.productName}</b> (₹${o.totalPrice})<br>
+                ಗ್ರಾಹಕರು: ${o.customer ? o.customer.name : 'N/A'} (${o.customer ? o.customer.phone : ''})<br>
+                <b>ಆರ್ಡರ್ ID:</b> ${o.orderId || o.id}
+              </div>
+            </div>
+
+            <div style="margin-top:8px; background:#fff3e0; padding:8px; border-radius:6px; font-size:0.78rem;">
+              <p><b>ಸ್ಥಿತಿ:</b> ಡೆಲಿವರಿ ಬಾಯ್ ಪಿಕ್-ಅಪ್ ಮಾಡಿದ್ದಾರೆ / ರಿಟರ್ನ್ ಪ್ರಕ್ರಿಯೆಯಲ್ಲಿದೆ.</p>
+              
+              <div style="margin-top:6px; display:flex; gap:6px; align-items:center;">
+                <a href="${upiLink}" class="btn btn-primary" style="flex:1; font-size:0.7rem; padding:6px;">
+                  📱 ಫೋನ್‌ಪೇ / ಗೂಗಲ್ ಪೇ ಮೂಲಕ ಪಾವತಿಸಿ
+                </a>
+                <button class="btn btn-success" onclick="openQRModal('${qrCodeImg}', '${o.totalPrice}')" style="font-size:0.7rem; padding:6px;">
+                  ಕ್ಯಾನ್ ಸ್ಕ್ಯಾನ್ ನೋಡಿ
+                </button>
+              </div>
+            </div>
+
+            <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:0.75rem; font-weight:bold; color:${isPaymentSuccess ? 'var(--success)' : '#d32f2f'};">
+                ${isPaymentSuccess ? '✅ ಪಾವತಿ ಸಕ್ಸಸ್‌ಫುಲ್ ಆಗಿದೆ (ಗ್ರಾಹಕರಿಗೆ ತೋರಿಸಲಾಗಿದೆ)' : '⏳ ಪಾವತಿ ಪೆಂಡಿಂಗ್‌ನಲ್ಲಿದೆ'}
+              </span>
+              ${!isPaymentSuccess ? `
+                <button class="btn btn-success" onclick="markPaymentSuccess('${o.id}')">ಪೇಮೆಂಟ್ ಸಕ್ಸಸ್ ಮಾಡಿ</button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function markPaymentSuccess(orderId) {
       try {
-        await window.updateDoc(window.doc(window.db, "shop_owners", docId), { membership: `ಪೇಮೆಂಟ್ ಸಕ್ಸೆಸ್‌ಫುಲ್ (${plan})` });
-        alert("ಮೆಂಬರ್‌ಶಿಪ್ ಯಶಸ್ವಿಯಾಗಿ ಅಪ್‌ಡೇಟ್ ಆಗಿದೆ!");
+        await window.updateDoc(window.doc(window.db, "orders", orderId), {
+          paymentStatus: 'SUCCESS'
+        });
+        alert("ಪಾವತಿ ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ಸಸ್ ಮಾಡಲಾಗಿದೆ! ಗ್ರಾಹಕರ ಆಪ್‌ನಲ್ಲಿ ಇದು ಅಪ್‌ಡೇಟ್ ಆಗುತ್ತದೆ.");
+      } catch(e) {
+        alert("Error: " + e.message);
+      }
+    }
+
+    async function markShopPaymentSuccess(docId) {
+      try {
+        await window.updateDoc(window.doc(window.db, "shop_owners", docId), {
+          paymentStatus: 'SUCCESS'
+        });
+        alert("ಅಂಗಡಿ ಮಾಲೀಕರ ಪಾವತಿ ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ಸಸ್ ಮಾಡಲಾಗಿದೆ!");
       } catch(e) {
         alert("Error: " + e.message);
       }
@@ -315,9 +414,26 @@
       }
     }
 
-    function openImageModal(imgSrc) {
-      document.getElementById('modalImgSrc').src = imgSrc;
+    async function deleteCustomerRecord(phone) {
+      if (confirm(`⚠️ ಎಚ್ಚರಿಕೆ: ಈ ಗ್ರಾಹಕರನ್ನು (Phone: ${phone}) ಬ್ಲಾಕ್ ಮಾಡಲು ಬಯಸುವಿರಾ?`)) {
+        alert("ಗ್ರಾಹಕರ ಆರ್ಡರ್‌ಗಳನ್ನು ನಿರ್ಬಂಧಿಸಲಾಗಿದೆ.");
+      }
+    }
+
+    function openImageModal(imgSrc, title) {
+      document.getElementById('modalTitle').innerText = title;
+      document.getElementById('modalBodyContent').innerHTML = `<img src="${imgSrc}" style="width:100%; max-height:250px; object-fit:contain; margin:10px 0; border-radius:6px;">`;
       document.getElementById('downloadLink').href = imgSrc;
+      document.getElementById('imageModal').style.display = 'flex';
+    }
+
+    function openQRModal(qrImgSrc, price) {
+      document.getElementById('modalTitle').innerText = `ಪಾವತಿ ಕ್ಯೂಆರ್ ಕೋಡ್ (₹${price})`;
+      document.getElementById('modalBodyContent').innerHTML = `
+        <p style="font-size:0.8rem; margin-bottom:6px;">ಫೋನ್‌ಪೇ ಅಥವಾ ಗೂಗಲ್ ಪೇ ಮೂಲಕ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ ಪಾವತಿಸಿ:</p>
+        <img src="${qrImgSrc}" style="width:160px; height:160px; margin:10px auto; display:block; border:1px solid #ccc; border-radius:6px;">
+      `;
+      document.getElementById('downloadLink').href = qrImgSrc;
       document.getElementById('imageModal').style.display = 'flex';
     }
 
