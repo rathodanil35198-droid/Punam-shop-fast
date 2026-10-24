@@ -9,7 +9,7 @@
   <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, deleteDoc, doc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, deleteDoc, doc, updateDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAm3HFKu101wex1b025-zJZ2BJ_o1Xvw",
@@ -30,6 +30,7 @@
     window.doc = doc;
     window.updateDoc = updateDoc;
     window.getDocs = getDocs;
+    window.serverTimestamp = serverTimestamp;
   </script>
 
   <style>
@@ -138,10 +139,8 @@
     let allOrders = [];
 
     window.addEventListener('DOMContentLoaded', () => {
-      // Handle Mobile Back Button history state so app doesn't close unexpectedly
       window.history.pushState({ page: 'master' }, '', '');
       window.addEventListener('popstate', (event) => {
-        // Prevent accidental exit by maintaining state
         window.history.pushState({ page: 'master' }, '', '');
       });
     });
@@ -167,21 +166,18 @@
     }
 
     function loadMasterData() {
-      // Fetch Orders
       window.onSnapshot(window.collection(window.db, "orders"), (snap) => {
         allOrders = [];
         snap.forEach(d => allOrders.push({ id: d.id, ...d.data() }));
         processDataViews();
       });
 
-      // Fetch Shop Owners
       window.onSnapshot(window.collection(window.db, "shop_owners"), (snap) => {
         allShops = [];
         snap.forEach(d => allShops.push({ docId: d.id, ...d.data() }));
         renderShops(allShops);
       });
 
-      // Fetch Delivery Boys
       window.onSnapshot(window.collection(window.db, "delivery_boys"), (snap) => {
         allDeliveryBoys = [];
         snap.forEach(d => allDeliveryBoys.push({ docId: d.id, ...d.data() }));
@@ -228,7 +224,6 @@
         let totalOrdersCount = shopOrders.length;
         let returnsCount = shopOrders.filter(o => o.status === 'RETURNED' || o.isReturned).length;
         
-        // Total money calculations with 15% commission deduction and minus returned amount
         let grossEarnings = shopOrders.reduce((acc, curr) => (curr.status === 'DELIVERED' || curr.status === 'STEP_4') ? acc + Number(curr.totalPrice || 0) : acc, 0);
         let returnDeduction = shopOrders.reduce((acc, curr) => (curr.status === 'RETURNED' || curr.isReturned) ? acc + Number(curr.totalPrice || 0) : acc, 0);
         
@@ -237,7 +232,12 @@
         let payableToShop = netAfterReturn - commission15;
         if (payableToShop < 0) payableToShop = 0;
 
-        let shopPaymentStatus = s.paymentStatus || 'PENDING'; // PENDING or SUCCESS
+        // 1 Year Expiry Check for Master Panel View
+        const now = Date.now();
+        let isPaidActive = s.isPaid || false;
+        if (s.paidExpiryDate && now > s.paidExpiryDate) {
+          isPaidActive = false;
+        }
 
         return `
           <div class="card-box">
@@ -257,17 +257,35 @@
               • <b>ಅಂಗಡಿ ಮಾಲೀಕರಿಗೆ ನೀಡಬೇಕಾದ ಮೊತ್ತ: ₹${payableToShop}</b>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-              <span style="font-size:0.75rem; font-weight:bold; color:${shopPaymentStatus === 'SUCCESS' ? 'var(--success)' : '#d32f2f'};">
-                ${shopPaymentStatus === 'SUCCESS' ? '✅ ಪೇಮೆಂಟ್ ಸಕ್ಸಸ್‌ಫುಲ್ ಆಗಿದೆ' : '⚠️ ಪೇಮೆಂಟ್ ಪೆಂಡಿಂಗ್‌ನಲ್ಲಿದೆ (2-3 ದಿನಗಳು)'}
+              <span style="font-size:0.75rem; font-weight:bold; color:${isPaidActive ? 'var(--success)' : '#d32f2f'};">
+                ${isPaidActive ? '✅ ಮೆಂಬರ್‌ಶಿಪ್ ಸಕ್ಸಸ್‌ಫುಲ್ ಆಗಿದೆ' : '⚠️ ಮೆಂಬರ್‌ಶಿಪ್ ಪೇಮೆಂಟ್ ಪೆಂಡಿಂಗ್ ಇದೆ'}
               </span>
-              ${shopPaymentStatus !== 'SUCCESS' ? `
-                <button class="btn btn-success" onclick="markShopPaymentSuccess('${s.docId}')">ಪೇಮೆಂಟ್ ಸಕ್ಸಸ್ ಮಾಡಿ</button>
-              ` : ''}
+              <button class="btn ${isPaidActive ? 'btn-danger' : 'btn-success'}" onclick="toggleShopPayment('${s.docId}', ${isPaidActive})">
+                ${isPaidActive ? 'ಪೆಂಡಿಂಗ್‌ಗೆ ಬದಲಾಯಿಸಿ' : 'ಪೇಮೆಂಟ್ ಸಕ್ಸಸ್ ಮಾಡಿ'}
+              </button>
               <button class="btn btn-danger" onclick="deleteRecord('shop_owners', '${s.docId}', 'ಅಂಗಡಿ ಮಾಲೀಕ')">ಡಿಲೀಟ್</button>
             </div>
           </div>
         `;
       }).join('');
+    }
+
+    async function toggleShopPayment(docId, currentStatus) {
+      try {
+        const newStatus = !currentStatus;
+        // 1 Year Expiry Calculation (365 days)
+        const oneYearFromNow = Date.now() + (365 * 24 * 60 * 60 * 1000);
+
+        await window.updateDoc(window.doc(window.db, "shop_owners", docId), {
+          isPaid: newStatus,
+          paidAt: window.serverTimestamp(),
+          paidExpiryDate: newStatus ? oneYearFromNow : null
+        });
+
+        alert(newStatus ? "🟢 ಅಂಗಡಿ ಮಾಲೀಕರ ಪೇಮೆಂಟ್ ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ಸಸ್ ಮಾಡಲಾಗಿದೆ! (1 ವರ್ಷ ಪರ್ಮಿಷನ್ ನೀಡಲಾಗಿದೆ)" : "🔴 ಪೇಮೆಂಟ್ ಸ್ಟೇಟಸ್ ಪೆಂಡಿಂಗ್‌ಗೆ ಬದಲಾಯಿಸಲಾಗಿದೆ.");
+      } catch(e) {
+        alert("Error: " + e.message);
+      }
     }
 
     function renderDeliveryBoys(list) {
@@ -331,7 +349,6 @@
 
     function renderReturnsTab(orders) {
       const container = document.getElementById('returnsListContainer');
-      // Filter orders that are requested for return or picked up by delivery boy
       let returnOrders = orders.filter(o => o.isReturned || o.status === 'RETURNED' || o.returnStatus === 'RETURN_REQUESTED' || o.returnStatus === 'PICKED_UP_BY_DBOY');
 
       if (returnOrders.length === 0) {
@@ -386,18 +403,7 @@
         await window.updateDoc(window.doc(window.db, "orders", orderId), {
           paymentStatus: 'SUCCESS'
         });
-        alert("ಪಾವತಿ ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ಸಸ್ ಮಾಡಲಾಗಿದೆ! ಗ್ರಾಹಕರ ಆಪ್‌ನಲ್ಲಿ ಇದು ಅಪ್‌ಡೇಟ್ ಆಗುತ್ತದೆ.");
-      } catch(e) {
-        alert("Error: " + e.message);
-      }
-    }
-
-    async function markShopPaymentSuccess(docId) {
-      try {
-        await window.updateDoc(window.doc(window.db, "shop_owners", docId), {
-          paymentStatus: 'SUCCESS'
-        });
-        alert("ಅಂಗಡಿ ಮಾಲೀಕರ ಪಾವತಿ ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ಸಸ್ ಮಾಡಲಾಗಿದೆ!");
+        alert("ಪಾವತಿ ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ಸಸ್ ಮಾಡಲಾಗಿದೆ!");
       } catch(e) {
         alert("Error: " + e.message);
       }
