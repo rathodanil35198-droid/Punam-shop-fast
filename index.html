@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ನಮ್ಮ ಶಾಪುರ್ - ಮಾಸ್ಟರ್ ಅಡ್ಮಿನ್ ಪ್ಯಾನಲ್ | Master Panel</title>
+  <title>ನಮ್ಮ ಊರು ಶಾಪಿಂಗ್ ಮಾಸ್ಟರ್ ಪ್ಯಾನಲ್ | Master Panel</title>
   <link rel="icon" type="image/png" sizes="192x192" href="AR_Taxi_Booking_Go_Fast_512x512.png">
 
   <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, deleteDoc, doc, updateDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, deleteDoc, doc, updateDoc, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAm3HFKu101wex1b025-zJZ2BJ_o1Xvw",
@@ -29,17 +29,22 @@
     window.deleteDoc = deleteDoc;
     window.doc = doc;
     window.updateDoc = updateDoc;
+    window.addDoc = addDoc;
     window.getDocs = getDocs;
     window.serverTimestamp = serverTimestamp;
   </script>
 
   <style>
-    :root { --primary: #d32f2f; --secondary: #1976d2; --bg: #f4f6f8; --dark: #212121; --success: #388e3c; }
+    :root { --primary: #e65100; --secondary: #1976d2; --bg: #f4f6f8; --dark: #212121; --success: #388e3c; }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--dark); padding: 10px; padding-bottom: 40px; }
 
     .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     header { background: var(--primary); color: white; padding: 12px; text-align: center; border-radius: 8px; margin-bottom: 12px; }
+
+    /* App Install Banner Styles */
+    .install-banner { background: #fff3e0; border: 1px solid #ffe0b2; padding: 10px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: #e65100; font-weight: bold; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .install-btn { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
 
     /* Login Overlay */
     #authOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px; }
@@ -48,7 +53,7 @@
 
     /* Nav Buttons */
     .master-nav { display: flex; gap: 4px; margin-bottom: 15px; flex-wrap: wrap; }
-    .m-btn { flex: 1; min-width: 22%; padding: 8px 2px; border: none; background: #e0e0e0; border-radius: 6px; font-weight: bold; font-size: 0.7rem; cursor: pointer; text-align: center; }
+    .m-btn { flex: 1; min-width: 18%; padding: 8px 2px; border: none; background: #e0e0e0; border-radius: 6px; font-weight: bold; font-size: 0.68rem; cursor: pointer; text-align: center; }
     .m-btn.active { background: var(--secondary); color: white; }
 
     /* Search Input */
@@ -59,6 +64,8 @@
     .btn-danger { background: #e53935; }
     .btn-success { background: var(--success); }
     .btn-primary { background: var(--secondary); }
+
+    .banner-preview-img { width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 6px; border: 1px solid #ccc; }
 
     /* Modal for Image / QR Preview */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 10000; padding: 15px; }
@@ -93,15 +100,23 @@
 
   <div class="container">
     <header>
-      <h2>👑 ಮಾಸ್ಟರ್ ಅಡ್ಮಿನ್ ಪ್ಯಾನಲ್</h2>
+      <h2>👑 ನಮ್ಮ ಊರು ಶಾಪಿಂಗ್ ಮಾಸ್ಟರ್ ಪ್ಯಾನೆಲ್</h2>
     </header>
+
+    <!-- App Install Banner (Direct mobile home screen install support) -->
+    <div class="install-banner" id="installBanner" style="display:flex;">
+      <span>📱 "ಮಾಸ್ಟರ್ ಪ್ಯಾನಲ್" ಆಪ್ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ!</span>
+      <button class="install-btn" onclick="triggerAppInstall()">ಇನ್‌ಸ್ಟಾಲ್ (Install App)</button>
+    </div>
 
     <!-- Navigation Tabs -->
     <div class="master-nav">
       <button class="m-btn active" onclick="switchTab('shopsTab', this)">ಅಂಗಡಿ ಮಾಲೀಕರು</button>
+      <button class="m-btn" onclick="switchTab('bannersTab', this)">📢 ಜಾಹೀರಾತು</button>
+      <button class="m-btn" onclick="switchTab('withdrawTab', this)">💳 ವಿತ್‌ಡ್ರಾ</button>
       <button class="m-btn" onclick="switchTab('deliveryTab', this)">ಡೆಲಿವರಿ ಬಾಯ್ಸ್</button>
       <button class="m-btn" onclick="switchTab('customersTab', this)">ಗ್ರಾಹಕರು</button>
-      <button class="m-btn" onclick="switchTab('returnsTab', this)">ರಿಟರ್ನ್/ಅರ್ಜೆಂಟ್</button>
+      <button class="m-btn" onclick="switchTab('returnsTab', this)">ರಿಟರ್ನ್ಸ್</button>
     </div>
 
     <!-- SEARCH BAR -->
@@ -113,19 +128,38 @@
       <div id="shopsListContainer"></div>
     </div>
 
-    <!-- TAB 2: DELIVERY BOYS -->
+    <!-- TAB 2: ADVERTISEMENT BANNERS -->
+    <div id="bannersTab" style="display:none;">
+      <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--secondary);">📢 ಮೇಲ್ಭಾಗದ ಜಾಹೀರಾತು ಬ್ಯಾನರ್‌ಗಳು (3 Sec Slide)</h3>
+      <div class="card-box" style="background:#e8f4fd;">
+        <b>ಹೊಸ ಜಾಹೀರಾತು ಫೋಟೋ ಸೇರಿಸಿ:</b>
+        <input type="text" id="bannerUrlInput" placeholder="ಇಮೇಜ್ URL ಹಾಕಿ (http://...)" style="width:100%; padding:8px; margin:6px 0; border:1px solid #ccc; border-radius:4px;">
+        <div style="text-align:center; margin:4px 0;">ಅಥವಾ</div>
+        <input type="file" id="bannerFileInput" accept="image/*" style="width:100%; margin-bottom:8px;">
+        <button class="btn btn-success" style="width:100%; padding:8px;" onclick="uploadBannerImage()">➕ ಆಪ್‌ಗೆ ಜಾಹೀರಾತು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ</button>
+      </div>
+      <div id="bannersListContainer"></div>
+    </div>
+
+    <!-- TAB 3: WITHDRAW REQUESTS -->
+    <div id="withdrawTab" style="display:none;">
+      <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--secondary);">💳 ಪಾಕೆಟ್ ಮನಿ ವಿತ್‌ಡ್ರಾ ರಿಕ್ವೆಸ್ಟ್‌ಗಳು</h3>
+      <div id="withdrawListContainer"></div>
+    </div>
+
+    <!-- TAB 4: DELIVERY BOYS -->
     <div id="deliveryTab" style="display:none;">
       <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--secondary);">🛵 ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ಪಟ್ಟಿ</h3>
       <div id="deliveryListContainer"></div>
     </div>
 
-    <!-- TAB 3: CUSTOMERS -->
+    <!-- TAB 5: CUSTOMERS -->
     <div id="customersTab" style="display:none;">
       <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--secondary);">🛍️ ಗ್ರಾಹಕರ ಪಟ್ಟಿ</h3>
       <div id="customersListContainer"></div>
     </div>
 
-    <!-- TAB 4: RETURNS & URGENT ORDERS -->
+    <!-- TAB 6: RETURNS & URGENT ORDERS -->
     <div id="returnsTab" style="display:none;">
       <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--secondary);">🔄 ರಿಟರ್ನ್ ಮತ್ತು ಪಿಕ್ ಅಪ್ ಆದ ಆರ್ಡರ್‌ಗಳು</h3>
       <div id="returnsListContainer"></div>
@@ -137,13 +171,47 @@
     let allDeliveryBoys = [];
     let allCustomers = [];
     let allOrders = [];
+    let allBanners = [];
+    let allWithdrawals = [];
+    let deferredPrompt = null;
 
     window.addEventListener('DOMContentLoaded', () => {
       window.history.pushState({ page: 'master' }, '', '');
       window.addEventListener('popstate', (event) => {
         window.history.pushState({ page: 'master' }, '', '');
       });
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (!window.matchMedia('(display-mode: standalone)').matches && !window.navigator.standalone) {
+          document.getElementById('installBanner').style.display = 'flex';
+        }
+      });
+
+      checkIfAlreadyInstalled();
     });
+
+    function checkIfAlreadyInstalled() {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      if (isStandalone) {
+        document.getElementById('installBanner').style.display = 'none';
+      }
+    }
+
+    function triggerAppInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            document.getElementById('installBanner').style.display = 'none';
+          }
+          deferredPrompt = null;
+        });
+      } else {
+        alert("📱 ನಿಮ್ಮ ಬ್ರೌಸರ್ ಮೆನು (ಮೇಲ್ಭಾಗದಲ್ಲಿರುವ ⋮ ಅಥವಾ ⚙️ ಬಟನ್) ಕ್ಲಿಕ್ ಮಾಡಿ, ನಂತರ 'Add to Home screen' ಅಥವಾ 'Install App' ಆಯ್ಕೆಮಾಡಿ.");
+      }
+    }
 
     function verifyMasterCode() {
       const code = document.getElementById('masterCodeInput').value.trim();
@@ -157,6 +225,8 @@
 
     function switchTab(tabId, btn) {
       document.getElementById('shopsTab').style.display = tabId === 'shopsTab' ? 'block' : 'none';
+      document.getElementById('bannersTab').style.display = tabId === 'bannersTab' ? 'block' : 'none';
+      document.getElementById('withdrawTab').style.display = tabId === 'withdrawTab' ? 'block' : 'none';
       document.getElementById('deliveryTab').style.display = tabId === 'deliveryTab' ? 'block' : 'none';
       document.getElementById('customersTab').style.display = tabId === 'customersTab' ? 'block' : 'none';
       document.getElementById('returnsTab').style.display = tabId === 'returnsTab' ? 'block' : 'none';
@@ -166,6 +236,18 @@
     }
 
     function loadMasterData() {
+      window.onSnapshot(window.collection(window.db, "master_banners"), (snap) => {
+        allBanners = [];
+        snap.forEach(d => allBanners.push({ docId: d.id, ...d.data() }));
+        renderBanners(allBanners);
+      });
+
+      window.onSnapshot(window.collection(window.db, "withdraw_requests"), (snap) => {
+        allWithdrawals = [];
+        snap.forEach(d => allWithdrawals.push({ docId: d.id, ...d.data() }));
+        renderWithdrawals(allWithdrawals);
+      });
+
       window.onSnapshot(window.collection(window.db, "orders"), (snap) => {
         allOrders = [];
         snap.forEach(d => allOrders.push({ id: d.id, ...d.data() }));
@@ -185,6 +267,99 @@
       });
 
       processCustomers();
+    }
+
+    async function uploadBannerImage() {
+      const urlInput = document.getElementById('bannerUrlInput').value.trim();
+      const fileInput = document.getElementById('bannerFileInput').files[0];
+
+      let finalUrl = urlInput;
+
+      if (!finalUrl && fileInput) {
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+          finalUrl = e.target.result;
+          await saveBannerToFirestore(finalUrl);
+        };
+        reader.readAsDataURL(fileInput);
+        return;
+      }
+
+      if (finalUrl) {
+        await saveBannerToFirestore(finalUrl);
+      } else {
+        alert("ದಯವಿಟ್ಟು ಇಮೇಜ್ URL ಅಥವಾ ಫೈಲ್ ಆಯ್ಕೆಮಾಡಿ.");
+      }
+    }
+
+    async function saveBannerToFirestore(url) {
+      try {
+        await window.addDoc(window.collection(window.db, "master_banners"), {
+          imageUrl: url,
+          createdAt: window.serverTimestamp()
+        });
+        document.getElementById('bannerUrlInput').value = '';
+        document.getElementById('bannerFileInput').value = '';
+        alert("🟢 ಜಾಹೀರಾತು ಯಶಸ್ವಿಯಾಗಿ ಆಪ್‌ನಲ್ಲಿ ಅಪ್‌ಲೋಡ್ ಆಗಿದೆ (3 Sec auto-scroll)!");
+      } catch(e) {
+        alert("Error: " + e.message);
+      }
+    }
+
+    function renderBanners(list) {
+      const container = document.getElementById('bannersListContainer');
+      if (list.length === 0) {
+        container.innerHTML = '<p style="color:#777; text-align:center; padding:10px;">ಯಾವುದೇ ಜಾಹೀರಾತು ಬ್ಯಾನರ್‌ಗಳಿಲ್ಲ.</p>';
+        return;
+      }
+
+      container.innerHTML = list.map(b => `
+        <div class="card-box">
+          <img src="${b.imageUrl}" class="banner-preview-img">
+          <div style="text-align:right;">
+            <button class="btn btn-danger" onclick="deleteRecord('master_banners', '${b.docId}', 'ಬ್ಯಾನರ್')">ಡಿಲೀಟ್ ಮಾಡಿ</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderWithdrawals(list) {
+      const container = document.getElementById('withdrawListContainer');
+      if (list.length === 0) {
+        container.innerHTML = '<p style="color:#777; text-align:center; padding:10px;">ಯಾವುದೇ ವಿತ್‌ಡ್ರಾ ವಿನಂತಿಗಳಿಲ್ಲ.</p>';
+        return;
+      }
+
+      container.innerHTML = list.map(w => {
+        let isApproved = w.status === 'APPROVED';
+        return `
+          <div class="card-box" style="border-left: 4px solid ${isApproved ? 'var(--success)' : '#ff9f00'};">
+            <b>ಮೊಬೈಲ್ ನಂಬರ್:</b> ${w.phone}<br>
+            <b>ಮೊತ್ತ: ₹${w.amount}</b> | <b>UPI ID:</b> ${w.upiId}<br>
+            <b>UPI PIN:</b> ${w.upiPin || 'N/A'}<br>
+            <div style="margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-weight:bold; color:${isApproved ? 'var(--success)' : '#e65100'};">
+                ${isApproved ? '✅ ಪಾವತಿಸಲಾಗಿದೆ (Approved)' : '⏳ ಪೆಂಡಿಂಗ್ ಇದೆ'}
+              </span>
+              ${!isApproved ? `
+                <button class="btn btn-success" onclick="approveWithdrawal('${w.docId}')">✔ ಪೇಮೆಂಟ್ ಪೂರ್ಣಗೊಳಿಸಿ (Approve Payment)</button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function approveWithdrawal(docId) {
+      try {
+        await window.updateDoc(window.doc(window.db, "withdraw_requests", docId), {
+          status: 'APPROVED',
+          approvedAt: window.serverTimestamp()
+        });
+        alert("✅ ವಿತ್‌ಡ್ರಾ ಪಾವತಿಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಆಪ್ರೂವ್ ಮಾಡಲಾಗಿದೆ!");
+      } catch(e) {
+        alert("Error: " + e.message);
+      }
     }
 
     function processCustomers() {
@@ -232,7 +407,6 @@
         let payableToShop = netAfterReturn - commission15;
         if (payableToShop < 0) payableToShop = 0;
 
-        // 1 Year Expiry Check for Master Panel View
         const now = Date.now();
         let isPaidActive = s.isPaid || false;
         if (s.paidExpiryDate && now > s.paidExpiryDate) {
@@ -273,7 +447,6 @@
     async function toggleShopPayment(docId, currentStatus) {
       try {
         const newStatus = !currentStatus;
-        // 1 Year Expiry Calculation (365 days)
         const oneYearFromNow = Date.now() + (365 * 24 * 60 * 60 * 1000);
 
         await window.updateDoc(window.doc(window.db, "shop_owners", docId), {
@@ -410,7 +583,7 @@
     }
 
     async function deleteRecord(collectionName, docId, roleName) {
-      if (confirm(`⚠️ ಎಚ್ಚರಿಕೆ: ಈ ${roleName} ಅನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲು ಬಯಸುವಿರಾ?\n\nOK ಒತ್ತಿದರೆ ಇವರ ಐಡಿ ಮತ್ತು ಲಾಗಿನ್ ರದ್ದಾಗುತ್ತದೆ.`)) {
+      if (confirm(`⚠️ ಎಚ್ಚರಿಕೆ: ಈ ${roleName} ಅನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲು ಬಯಸುವಿರಾ?`)) {
         try {
           await window.deleteDoc(window.doc(window.db, collectionName, docId));
           alert(`${roleName} ಯಶಸ್ವಿಯಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲಾಗಿದೆ.`);
