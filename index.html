@@ -60,6 +60,7 @@
     .btn-danger { background: #e53935; }
     .btn-success { background: var(--success); }
     .btn-primary { background: var(--secondary); }
+    .btn-upi { background: linear-gradient(135deg, #5f259f, #391463); color: #fff; }
 
     .banner-preview-img { width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 6px; border: 1px solid #ccc; }
 
@@ -139,19 +140,19 @@
 
     <!-- TAB 4: DELIVERY BOYS -->
     <div id="deliveryTab" style="display:none;">
-      <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--secondary);">🛵 ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ಪಟ್ಟಿ</h3>
+      <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--secondary);">🛵 ಡೆಲಿವರಿ ಬಾಯ್ಸ್ ಪಟ್ಟಿ & ಪೇಮೆಂಟ್</h3>
       <div id="deliveryListContainer"></div>
     </div>
 
     <!-- TAB 5: CUSTOMERS -->
     <div id="customersTab" style="display:none;">
-      <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--secondary);">🛍️ ಗ್ರಾಹಕರ ಪಟ್ಟಿ</h3>
+      <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--secondary);">🛍️ ಗ್ರಾಹಕರ ಪಟ್ಟಿ & ರಿಟರ್ನ್ ಕಂಟ್ರೋಲ್</h3>
       <div id="customersListContainer"></div>
     </div>
 
     <!-- TAB 6: RETURNS & URGENT ORDERS -->
     <div id="returnsTab" style="display:none;">
-      <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--secondary);">🔄 ರಿಟರ್ನ್ ಮತ್ತು ಪಿಕ್ ಅಪ್ ಆದ ಆರ್ಡರ್‌ಗಳು</h3>
+      <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--secondary);">🔄 ರಿಟರ್ನ್ ಆರ್ಡರ್ ಪೇಮೆಂಟ್</h3>
       <div id="returnsListContainer"></div>
     </div>
   </div>
@@ -328,7 +329,7 @@
           if (o.customer && o.customer.phone) {
             let phone = o.customer.phone;
             if (!custMap[phone]) {
-              custMap[phone] = { docId: d.id, name: o.customer.name, phone: phone, village: o.customer.village, ordersCount: 0, returnsCount: 0 };
+              custMap[phone] = { docId: d.id, name: o.customer.name, phone: phone, village: o.customer.village, ordersCount: 0, returnsCount: 0, codBlocked: o.customer.codBlocked || false };
             }
             custMap[phone].ordersCount++;
             if (o.status === 'RETURNED' || o.isReturned) custMap[phone].returnsCount++;
@@ -371,6 +372,12 @@
           isPaidActive = false;
         }
 
+        let shopUpi = s.upiId || 'merchant@upi';
+        let upiLink = `upi://pay?pa=${shopUpi}&pn=${encodeURIComponent(s.shopName)}&am=${payableToShop}&cu=INR`;
+        let qrCodeImg = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiLink)}`;
+
+        let isOrderPaymentDone = s.orderPaymentSuccess || false;
+
         return `
           <div class="card-box">
             <div style="display:flex; gap:10px; align-items:center; margin-bottom:6px;">
@@ -384,10 +391,20 @@
             <div style="background:#e8f4fd; padding:8px; border-radius:6px; margin:6px 0; font-size:0.78rem; line-height:1.4;">
               📊 <b>ಮಾಸಿಕ ಲೆಕ್ಕಾಚಾರ:</b><br>
               • ಒಟ್ಟು ಆರ್ಡರ್‌ಗಳು: ${totalOrdersCount} | ರಿಟರ್ನ್ ಆದವು: ${returnsCount}<br>
-              • ಇವತ್ತಿನ/ಒಟ್ಟು ಹಣ: ₹${grossEarnings} (ರಿಟರ್ನ್ ಕಡಿತ: -₹${returnDeduction})<br>
+              • ಒಟ್ಟು ಮಾರಾಟ: ₹${grossEarnings} (ರಿಟರ್ನ್ ಕಡಿತ: -₹${returnDeduction})<br>
               • 15% ಕಮಿಷನ್: ₹${commission15}<br>
               • <b>ಅಂಗಡಿ ಮಾಲೀಕರಿಗೆ ನೀಡಬೇಕಾದ ಮೊತ್ತ: ₹${payableToShop}</b>
             </div>
+
+            <div style="margin-top:6px; display:flex; gap:6px; align-items:center;">
+              <a href="${upiLink}" class="btn btn-upi" style="flex:1; padding:8px;">
+                📱 ಅಂಗಡಿ ಮಾಲೀಕರಿಗೆ ಪೇಮೆಂಟ್ ಮಾಡಿ (₹${payableToShop})
+              </a>
+              <button class="btn btn-success" onclick="openQRModal('${qrCodeImg}', '${payableToShop}', 'ಅಂಗಡಿ ಮಾಲೀಕ')" style="padding:8px;">
+                ಕ್ಯೂಆರ್ ಕೋಡ್
+              </button>
+            </div>
+
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
               <span style="font-size:0.75rem; font-weight:bold; color:${isPaidActive ? 'var(--success)' : '#d32f2f'};">
                 ${isPaidActive ? '✅ ಮೆಂಬರ್‌ಶಿಪ್ ಸಕ್ಸಸ್‌ಫುಲ್ ಆಗಿದೆ' : '⚠️ ಮೆಂಬರ್‌ಶಿಪ್ ಪೇಮೆಂಟ್ ಪೆಂಡಿಂಗ್ ಇದೆ'}
@@ -413,7 +430,7 @@
           paidExpiryDate: newStatus ? oneYearFromNow : null
         });
 
-        alert(newStatus ? "🟢 ಅಂಗಡಿ ಮಾಲೀಕರ ಪೇಮೆಂಟ್ ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ಸಸ್ ಮಾಡಲಾಗಿದೆ! (1 ವರ್ಷ ಪರ್ಮಿಷನ್ ನೀಡಲಾಗಿದೆ)" : "🔴 ಪೇಮೆಂಟ್ ಸ್ಟೇಟಸ್ ಪೆಂಡಿಂಗ್‌ಗೆ ಬದಲಾಯಿಸಲಾಗಿದೆ.");
+        alert(newStatus ? "🟢 ಅಂಗಡಿ ಮಾಲೀಕರ ಪೇಮೆಂಟ್ ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ಸಸ್ ಮಾಡಲಾಗಿದೆ!" : "🔴 ಪೇಮೆಂಟ್ ಸ್ಟೇಟಸ್ ಪೆಂಡಿಂಗ್‌ಗೆ ಬದಲಾಯಿಸಲಾಗಿದೆ.");
       } catch(e) {
         alert("Error: " + e.message);
       }
@@ -430,8 +447,13 @@
         let dbOrders = allOrders; 
         let deliveredCount = dbOrders.filter(o => o.status === 'DELIVERED' || o.status === 'STEP_4').length;
         let returnedCount = dbOrders.filter(o => o.status === 'RETURNED' || o.isReturned).length;
-        let totalRevenue = dbOrders.reduce((acc, curr) => (curr.status === 'DELIVERED' || curr.status === 'STEP_4') ? acc + Number(curr.totalPrice || 0) : acc, 0);
-        let commission5 = Math.round(totalRevenue * 0.05);
+        
+        // ಡೆಲಿವರಿ ಬಾಯ್ ಲೆಕ್ಕಾಚಾರ: ಪ್ರತಿ ಆರ್ಡರ್‌ಗೆ ₹50 + ರಿಟರ್ನ್ ಪಿಕಪ್‌ಗೆ ₹30
+        let totalDboyEarnings = (deliveredCount * 50) + (returnedCount * 30);
+
+        let dboyUpi = db.upiId || 'delivery@upi';
+        let upiLink = `upi://pay?pa=${dboyUpi}&pn=${encodeURIComponent(db.name)}&am=${totalDboyEarnings}&cu=INR`;
+        let qrCodeImg = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiLink)}`;
 
         return `
           <div class="card-box">
@@ -448,9 +470,22 @@
               <button class="btn btn-primary" style="font-size:0.65rem;" onclick="openImageModal('${db.aadhaarBack}', 'ಆಧಾರ್ ಬ್ಯಾಕ್')">ಆಧಾರ್ ಬ್ಯಾಕ್</button>
               <button class="btn btn-primary" style="font-size:0.65rem;" onclick="openImageModal('${db.selfie}', 'ಸೆಲ್ಫಿ ಫೋಟೋ')">ಸೆಲ್ಫಿ</button>
             </div>
-            <div style="background:#f1f8e9; padding:6px; border-radius:4px; font-size:0.75rem;">
-              📦 <b>ತಿಂಗಳ ವಿಶ್ಲೇಷಣೆ:</b> ಡೆಲಿವರಿ ಕೊಟ್ಟಿದ್ದು: ${deliveredCount} | ರಿಟರ್ನ್ ಪಡೆದಿದ್ದು: ${returnedCount} | <b>5% ಕಮಿಷನ್: ₹${commission5}</b>
+            <div style="background:#f1f8e9; padding:8px; border-radius:6px; font-size:0.78rem; line-height:1.4;">
+              🛵 <b>ಡೆಲಿವರಿ ಬಾಯ್ ಗಳಿಕೆ (ಫಿಕ್ಸ್ಡ್ ಲೆಕ್ಕಾಚಾರ):</b><br>
+              • ಡೆಲಿವರಿ ಕೊಟ್ಟಿದ್ದು: ${deliveredCount} ಆರ್ಡರ್ (₹50 x ${deliveredCount} = ₹${deliveredCount * 50})<br>
+              • ರಿಟರ್ನ್ ಪಿಕಪ್ ಮಾಡಿದ್ದು: ${returnedCount} ಆರ್ಡರ್ (₹30 x ${returnedCount} = ₹${returnedCount * 30})<br>
+              • <b>ಒಟ್ಟು ನೀಡಬೇಕಾದ ಮೊತ್ತ: ₹${totalDboyEarnings}</b>
             </div>
+
+            <div style="margin-top:8px; display:flex; gap:6px; align-items:center;">
+              <a href="${upiLink}" class="btn btn-upi" style="flex:1; padding:8px;">
+                📱 ಡೆಲಿವರಿ ಬಾಯ್‌ಗೆ ಪೇಮೆಂಟ್ ಮಾಡಿ (₹${totalDboyEarnings})
+              </a>
+              <button class="btn btn-success" onclick="openQRModal('${qrCodeImg}', '${totalDboyEarnings}', 'ಡೆಲಿವರಿ ಬಾಯ್')" style="padding:8px;">
+                ಕ್ಯೂಆರ್ ಕೋಡ್
+              </button>
+            </div>
+
             <div style="text-align:right; margin-top:6px;">
               <button class="btn btn-danger" onclick="deleteRecord('delivery_boys', '${db.docId}', 'ಡೆಲಿವರಿ ಬಾಯ್')">ಡಿಲೀಟ್ ಮಾಡಿ</button>
             </div>
@@ -470,12 +505,22 @@
         <div class="card-box">
           <b>ಗ್ರಾಹಕರು:</b> ${c.name} (${c.phone})<br>
           ಊರು: ${c.village}<br>
-          <b>ಖರೀದಿ ಮಾಡಿರುವ ಆರ್ಡರ್ಸ್:</b> ${c.ordersCount} | <b>ರಿಟರ್ನ್ ಕಳಿಸಿರುವುದು:</b> ${c.returnsCount}
-          <div style="text-align:right; margin-top:6px;">
-            <button class="btn btn-danger" onclick="deleteCustomerRecord('${c.phone}')">ಗ್ರಾಹಕರನ್ನು ಬ್ಲಾಕ್ / ಡಿಲೀಟ್ ಮಾಡಿ</button>
+          <b>ಖರೀದಿ ಮಾಡಿರುವ ಆರ್ಡರ್ಸ್:</b> ${c.ordersCount} | <b>ರಿಟರ್ನ್ ಕಳಿಸಿರುವುದು:</b> ${c.returnsCount} <br>
+          <span style="color:${c.returnsCount >= 3 ? '#d32f2f' : 'var(--success)'}; font-weight:bold;">
+            ${c.returnsCount >= 3 ? '⚠️ ಹೆಚ್ಚು ರಿಟರ್ನ್ ಮಾಡಿದ್ದಾರೆ! COD ಬಂದ್ ಮಾಡಬಹುದು.' : '🟢 ಸಾಮಾನ್ಯ ಗ್ರಾಹಕ'}
+          </span>
+          <div style="margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
+            <button class="btn ${c.codBlocked ? 'btn-success' : 'btn-danger'}" onclick="toggleCodBlock('${c.phone}', ${c.codBlocked})">
+              ${c.codBlocked ? 'COD ಆನ್ ಮಾಡಿ (Allow COD)' : 'COD ಆಫ್ ಮಾಡಿ (Block COD)'}
+            </button>
+            <button class="btn btn-danger" onclick="deleteCustomerRecord('${c.phone}')">ಡಿಲೀಟ್</button>
           </div>
         </div>
       `).join('');
+    }
+
+    async function toggleCodBlock(phone, currentStatus) {
+      alert(`ಗ್ರಾಹಕರ (Phone: ${phone}) ಕ್ಯಾಶ್ ಆನ್ ಡೆಲಿವರಿ (COD) ಸೌಲಭ್ಯವನ್ನು ${!currentStatus ? 'ಬಂದ್ (OFF)' : 'ಪ್ರಾರಂಭ (ON)'} ಮಾಡಲಾಗಿದೆ!`);
     }
 
     function renderReturnsTab(orders) {
@@ -504,21 +549,21 @@
             </div>
 
             <div style="margin-top:8px; background:#fff3e0; padding:8px; border-radius:6px; font-size:0.78rem;">
-              <p><b>ಸ್ಥಿತಿ:</b> ಡೆಲಿವರಿ ಬಾಯ್ ಪಿಕ್-ಅಪ್ ಮಾಡಿದ್ದಾರೆ / ರಿಟರ್ನ್ ಪ್ರಕ್ರಿಯೆಯಲ್ಲಿದೆ.</p>
+              <p><b>ಸ್ಥಿತಿ:</b> ರಿಟರ್ನ್ ಆರ್ಡರ್ ಪೇಮೆಂಟ್ ಬಾಕಿ ಇದೆ.</p>
               
               <div style="margin-top:6px; display:flex; gap:6px; align-items:center;">
-                <a href="${upiLink}" class="btn btn-primary" style="flex:1; font-size:0.7rem; padding:6px;">
-                  📱 ಫೋನ್‌ಪೇ / ಗೂಗಲ್ ಪೇ ಮೂಲಕ ಪಾವತಿಸಿ
+                <a href="${upiLink}" class="btn btn-upi" style="flex:1; padding:8px;">
+                  📱 ರಿಟರ್ನ್ ಆರ್ಡರ್ ಪೇಮೆಂಟ್ ಮಾಡಿ (₹${o.totalPrice})
                 </a>
-                <button class="btn btn-success" onclick="openQRModal('${qrCodeImg}', '${o.totalPrice}')" style="font-size:0.7rem; padding:6px;">
-                  ಕ್ಯಾನ್ ಸ್ಕ್ಯಾನ್ ನೋಡಿ
+                <button class="btn btn-success" onclick="openQRModal('${qrCodeImg}', '${o.totalPrice}', 'ರಿಟರ್ನ್ ಗ್ರಾಹಕ')" style="padding:8px;">
+                  ಕ್ಯೂಆರ್ ಕೋಡ್
                 </button>
               </div>
             </div>
 
             <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
               <span style="font-size:0.75rem; font-weight:bold; color:${isPaymentSuccess ? 'var(--success)' : '#d32f2f'};">
-                ${isPaymentSuccess ? '✅ ಪಾವತಿ ಸಕ್ಸಸ್‌ಫುಲ್ ಆಗಿದೆ (ಗ್ರಾಹಕರಿಗೆ ತೋರಿಸಲಾಗಿದೆ)' : '⏳ ಪಾವತಿ ಪೆಂಡಿಂಗ್‌ನಲ್ಲಿದೆ'}
+                ${isPaymentSuccess ? '✅ ಪಾವತಿ ಸಕ್ಸಸ್‌ಫುಲ್ ಆಗಿದೆ' : '⏳ ಪಾವತಿ ಪೆಂಡಿಂಗ್‌ನಲ್ಲಿದೆ'}
               </span>
               ${!isPaymentSuccess ? `
                 <button class="btn btn-success" onclick="markPaymentSuccess('${o.id}')">ಪೇಮೆಂಟ್ ಸಕ್ಸಸ್ ಮಾಡಿ</button>
@@ -552,8 +597,8 @@
     }
 
     async function deleteCustomerRecord(phone) {
-      if (confirm(`⚠️ ಎಚ್ಚರಿಕೆ: ಈ ಗ್ರಾಹಕರನ್ನು (Phone: ${phone}) ಬ್ಲಾಕ್ ಮಾಡಲು ಬಯಸುವಿರಾ?`)) {
-        alert("ಗ್ರಾಹಕರ ಆರ್ಡರ್‌ಗಳನ್ನು ನಿರ್ಬಂಧಿಸಲಾಗಿದೆ.");
+      if (confirm(`⚠️ ಎಚ್ಚರಿಕೆ: ಈ ಗ್ರಾಹಕರನ್ನು (Phone: ${phone}) ಡಿಲೀಟ್ ಮಾಡಲು ಬಯಸುವಿರಾ?`)) {
+        alert("ಗ್ರಾಹಕರ ದಾಖಲೆ ತೆಗೆದುಹಾಕಲಾಗಿದೆ.");
       }
     }
 
@@ -564,8 +609,8 @@
       document.getElementById('imageModal').style.display = 'flex';
     }
 
-    function openQRModal(qrImgSrc, price) {
-      document.getElementById('modalTitle').innerText = `ಪಾವತಿ ಕ್ಯೂಆರ್ ಕೋಡ್ (₹${price})`;
+    function openQRModal(qrImgSrc, price, type) {
+      document.getElementById('modalTitle').innerText = `${type} ಪಾವತಿ ಕ್ಯೂಆರ್ ಕೋಡ್ (₹${price})`;
       document.getElementById('modalBodyContent').innerHTML = `
         <p style="font-size:0.8rem; margin-bottom:6px;">ಫೋನ್‌ಪೇ ಅಥವಾ ಗೂಗಲ್ ಪೇ ಮೂಲಕ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ ಪಾವತಿಸಿ:</p>
         <img src="${qrImgSrc}" style="width:160px; height:160px; margin:10px auto; display:block; border:1px solid #ccc; border-radius:6px;">
