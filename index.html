@@ -9,7 +9,7 @@
   <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, deleteDoc, doc, updateDoc, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, deleteDoc, doc, updateDoc, addDoc, getDocs, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAm3HFKu101wex1b025-zJZ2BJ_o1Xvw",
@@ -29,6 +29,8 @@
     window.deleteDoc = deleteDoc;
     window.doc = doc;
     window.updateDoc = updateDoc;
+    window.setDoc = setDoc;
+    window.getDoc = getDoc;
     window.addDoc = addDoc;
     window.getDocs = getDocs;
     window.serverTimestamp = serverTimestamp;
@@ -40,7 +42,16 @@
     body { background-color: var(--bg); color: var(--dark); padding: 10px; padding-bottom: 40px; }
 
     .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-    header { background: var(--primary); color: white; padding: 12px; text-align: center; border-radius: 8px; margin-bottom: 12px; }
+    header { background: var(--primary); color: white; padding: 12px; text-align: center; border-radius: 8px; margin-bottom: 12px; position: relative; }
+
+    /* Instapp Master Toggle Bar */
+    .instapp-bar { background: #333; color: white; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.85rem; font-weight: bold; }
+    .toggle-switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--success); }
+    input:checked + .slider:before { transform: translateX(26px); }
 
     /* Login Overlay */
     #authOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px; }
@@ -52,9 +63,7 @@
     .m-btn { flex: 1; min-width: 18%; padding: 8px 2px; border: none; background: #e0e0e0; border-radius: 6px; font-weight: bold; font-size: 0.68rem; cursor: pointer; text-align: center; }
     .m-btn.active { background: var(--secondary); color: white; }
 
-    /* Search Input */
     .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 12px; font-size: 0.85rem; }
-
     .card-box { background: #fafafa; border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 0.82rem; }
     .btn { padding: 6px 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; font-size: 0.75rem; text-decoration: none; display: inline-block; text-align: center; }
     .btn-danger { background: #e53935; }
@@ -63,8 +72,6 @@
     .btn-upi { background: linear-gradient(135deg, #5f259f, #391463); color: #fff; }
 
     .banner-preview-img { width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 6px; border: 1px solid #ccc; }
-
-    /* Modal for Image / QR Preview */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 10000; padding: 15px; }
     .modal-content { background: white; padding: 20px; border-radius: 10px; max-width: 400px; width: 100%; text-align: center; max-height: 90vh; overflow-y: auto; }
   </style>
@@ -99,6 +106,15 @@
     <header>
       <h2>👑 ನಮ್ಮ ಊರು ಶಾಪಿಂಗ್ ಮಾಸ್ಟರ್ ಪ್ಯಾನೆಲ್</h2>
     </header>
+
+    <!-- Master Instapp ON/OFF Control Bar -->
+    <div class="instapp-bar">
+      <span>⚡ ಇನ್‌ಸ್ಟಾಪ್ (Instapp) ಮಾಸ್ಟರ್ ಕಂಟ್ರೋಲ್:</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="instappMainToggle" onchange="toggleInstappSystem(this)">
+        <span class="slider"></span>
+      </label>
+    </div>
 
     <!-- Navigation Tabs -->
     <div class="master-nav">
@@ -146,7 +162,7 @@
 
     <!-- TAB 5: CUSTOMERS -->
     <div id="customersTab" style="display:none;">
-      <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--secondary);">🛍️ ಗ್ರಾಹಕರ ಪಟ್ಟಿ & ರಿಟರ್ನ್ ಕಂಟ್ರೋಲ್</h3>
+      <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--secondary);">🛍️ ಗ್ರಾಹಕರ ಪಟ್ಟಿ & ರಿಟರ್ನ್ ಕಂಟ್ರೋಲ್ (COD & UPI Settings)</h3>
       <div id="customersListContainer"></div>
     </div>
 
@@ -170,6 +186,7 @@
       window.addEventListener('popstate', (event) => {
         window.history.pushState({ page: 'master' }, '', '');
       });
+      loadInstappStatus();
     });
 
     function verifyMasterCode() {
@@ -192,6 +209,33 @@
 
       document.querySelectorAll('.m-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+    }
+
+    async function loadInstappStatus() {
+      try {
+        const docRef = window.doc(window.db, "settings", "instapp_control");
+        const docSnap = await window.getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          document.getElementById('instappMainToggle').checked = data.isOnline !== false;
+        } else {
+          await window.setDoc(docRef, { isOnline: true });
+          document.getElementById('instappMainToggle').checked = true;
+        }
+      } catch(e) { console.log(e); }
+    }
+
+    async function toggleInstappSystem(checkbox) {
+      const status = checkbox.checked;
+      try {
+        await window.setDoc(window.doc(window.db, "settings", "instapp_control"), {
+          isOnline: status,
+          updatedAt: window.serverTimestamp()
+        });
+        alert(status ? "🟢 ಇನ್‌ಸ್ಟಾಪ್ ಆಪ್ ಆನ್ (Online) ಮಾಡಲಾಗಿದೆ!" : "🔴 ಇನ್‌ಸ್ಟಾಪ್ ಆಪ್ ಆಫ್ (Server Down) ಮಾಡಲಾಗಿದೆ. ಗ್ರಾಹಕರು, ಅಂಗಡಿ ಮಾಲೀಕರು ಮತ್ತು ಡೆಲಿವರಿ ಬಾಯ್ಸ್‌ಗೆ ಸರ್ವರ್ ಡೌನ್ ಸಂದೇಶ ಕಾಣಿಸುತ್ತದೆ.");
+      } catch(e) {
+        alert("Error: " + e.message);
+      }
     }
 
     function loadMasterData() {
@@ -231,7 +275,6 @@
     async function uploadBannerImage() {
       const urlInput = document.getElementById('bannerUrlInput').value.trim();
       const fileInput = document.getElementById('bannerFileInput').files[0];
-
       let finalUrl = urlInput;
 
       if (!finalUrl && fileInput) {
@@ -259,10 +302,8 @@
         });
         document.getElementById('bannerUrlInput').value = '';
         document.getElementById('bannerFileInput').value = '';
-        alert("🟢 ಜಾಹೀರಾತು ಯಶಸ್ವಿಯಾಗಿ ಆಪ್‌ನಲ್ಲಿ ಅಪ್‌ಲೋಡ್ ಆಗಿದೆ (3 Sec auto-scroll)!");
-      } catch(e) {
-        alert("Error: " + e.message);
-      }
+        alert("🟢 ಜಾಹೀರಾತು ಯಶಸ್ವಿಯಾಗಿ ಆಪ್‌ನಲ್ಲಿ ಅಪ್‌ಲೋಡ್ ಆಗಿದೆ!");
+      } catch(e) { alert("Error: " + e.message); }
     }
 
     function renderBanners(list) {
@@ -271,7 +312,6 @@
         container.innerHTML = '<p style="color:#777; text-align:center; padding:10px;">ಯಾವುದೇ ಜಾಹೀರಾತು ಬ್ಯಾನರ್‌ಗಳಿಲ್ಲ.</p>';
         return;
       }
-
       container.innerHTML = list.map(b => `
         <div class="card-box">
           <img src="${b.imageUrl}" class="banner-preview-img">
@@ -288,7 +328,6 @@
         container.innerHTML = '<p style="color:#777; text-align:center; padding:10px;">ಯಾವುದೇ ವಿತ್‌ಡ್ರಾ ವಿನಂತಿಗಳಿಲ್ಲ.</p>';
         return;
       }
-
       container.innerHTML = list.map(w => {
         let isApproved = w.status === 'APPROVED';
         return `
@@ -300,9 +339,7 @@
               <span style="font-weight:bold; color:${isApproved ? 'var(--success)' : '#e65100'};">
                 ${isApproved ? '✅ ಪಾವತಿಸಲಾಗಿದೆ (Approved)' : '⏳ ಪೆಂಡಿಂಗ್ ಇದೆ'}
               </span>
-              ${!isApproved ? `
-                <button class="btn btn-success" onclick="approveWithdrawal('${w.docId}')">✔ ಪೇಮೆಂಟ್ ಪೂರ್ಣಗೊಳಿಸಿ (Approve Payment)</button>
-              ` : ''}
+              ${!isApproved ? `<button class="btn btn-success" onclick="approveWithdrawal('${w.docId}')">✔ ಪೇಮೆಂಟ್ ಪೂರ್ಣಗೊಳಿಸಿ</button>` : ''}
             </div>
           </div>
         `;
@@ -315,26 +352,31 @@
           status: 'APPROVED',
           approvedAt: window.serverTimestamp()
         });
-        alert("✅ ವಿತ್‌ಡ್ರಾ ಪಾವತಿಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಆಪ್ರೂವ್ ಮಾಡಲಾಗಿದೆ!");
-      } catch(e) {
-        alert("Error: " + e.message);
-      }
+        alert("✅ ವಿತ್‌ಡ್ರಾ ಪಾವತಿಯನ್ನು ಆಪ್ರೂವ್ ಮಾಡಲಾಗಿದೆ!");
+      } catch(e) { alert("Error: " + e.message); }
     }
 
     function processCustomers() {
-      window.onSnapshot(window.collection(window.db, "orders"), (snap) => {
+      window.onSnapshot(window.collection(window.db, "customers_meta"), (snap) => {
         let custMap = {};
         snap.forEach(d => {
-          let o = d.data();
+          let cData = d.data();
+          custMap[cData.phone] = { docId: d.id, ...cData };
+        });
+
+        allOrders.forEach(o => {
           if (o.customer && o.customer.phone) {
             let phone = o.customer.phone;
             if (!custMap[phone]) {
-              custMap[phone] = { docId: d.id, name: o.customer.name, phone: phone, village: o.customer.village, ordersCount: 0, returnsCount: 0, codBlocked: o.customer.codBlocked || false };
+              custMap[phone] = { docId: phone, name: o.customer.name, phone: phone, village: o.customer.village, ordersCount: 0, returnsCount: 0, codAllowed: true };
             }
-            custMap[phone].ordersCount++;
-            if (o.status === 'RETURNED' || o.isReturned) custMap[phone].returnsCount++;
+            custMap[phone].ordersCount = (custMap[phone].ordersCount || 0) + 1;
+            if (o.status === 'RETURNED' || o.isReturned) {
+              custMap[phone].returnsCount = (custMap[phone].returnsCount || 0) + 1;
+            }
           }
         });
+
         allCustomers = Object.values(custMap);
         renderCustomers(allCustomers);
       });
@@ -344,6 +386,7 @@
       renderShops(allShops);
       renderDeliveryBoys(allDeliveryBoys);
       renderReturnsTab(allOrders);
+      processCustomers();
     }
 
     function renderShops(list) {
@@ -368,15 +411,11 @@
 
         const now = Date.now();
         let isPaidActive = s.isPaid || false;
-        if (s.paidExpiryDate && now > s.paidExpiryDate) {
-          isPaidActive = false;
-        }
+        if (s.paidExpiryDate && now > s.paidExpiryDate) isPaidActive = false;
 
         let shopUpi = s.upiId || 'merchant@upi';
         let upiLink = `upi://pay?pa=${shopUpi}&pn=${encodeURIComponent(s.shopName)}&am=${payableToShop}&cu=INR`;
         let qrCodeImg = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiLink)}`;
-
-        let isOrderPaymentDone = s.orderPaymentSuccess || false;
 
         return `
           <div class="card-box">
@@ -389,30 +428,24 @@
               </div>
             </div>
             <div style="background:#e8f4fd; padding:8px; border-radius:6px; margin:6px 0; font-size:0.78rem; line-height:1.4;">
-              📊 <b>ಮಾಸಿಕ ಲೆಕ್ಕಾಚಾರ:</b><br>
-              • ಒಟ್ಟು ಆರ್ಡರ್‌ಗಳು: ${totalOrdersCount} | ರಿಟರ್ನ್ ಆದವು: ${returnsCount}<br>
+              📊 <b>ಲೆಕ್ಕಾಚಾರ:</b><br>
               • ಒಟ್ಟು ಮಾರಾಟ: ₹${grossEarnings} (ರಿಟರ್ನ್ ಕಡಿತ: -₹${returnDeduction})<br>
-              • 15% ಕಮಿಷನ್: ₹${commission15}<br>
-              • <b>ಅಂಗಡಿ ಮಾಲೀಕರಿಗೆ ನೀಡಬೇಕಾದ ಮೊತ್ತ: ₹${payableToShop}</b>
+              • 15% ಕಮಿಷನ್: ₹${commission15} | <b>ನೀಡಬೇಕಾದ ಮೊತ್ತ: ₹${payableToShop}</b>
             </div>
 
             <div style="margin-top:6px; display:flex; gap:6px; align-items:center;">
-              <a href="${upiLink}" class="btn btn-upi" style="flex:1; padding:8px;">
-                📱 ಅಂಗಡಿ ಮಾಲೀಕರಿಗೆ ಪೇಮೆಂಟ್ ಮಾಡಿ (₹${payableToShop})
-              </a>
-              <button class="btn btn-success" onclick="openQRModal('${qrCodeImg}', '${payableToShop}', 'ಅಂಗಡಿ ಮಾಲೀಕ')" style="padding:8px;">
-                ಕ್ಯೂಆರ್ ಕೋಡ್
-              </button>
+              <a href="${upiLink}" class="btn btn-upi" style="flex:1; padding:8px;">📱 ಪೇಮೆಂಟ್ ಮಾಡಿ (₹${payableToShop})</a>
+              <button class="btn btn-success" onclick="openQRModal('${qrCodeImg}', '${payableToShop}', 'ಅಂಗಡಿ ಮಾಲೀಕ')" style="padding:8px;">ಕ್ಯೂಆರ್ ಕೋಡ್</button>
             </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
               <span style="font-size:0.75rem; font-weight:bold; color:${isPaidActive ? 'var(--success)' : '#d32f2f'};">
-                ${isPaidActive ? '✅ ಮೆಂಬರ್‌ಶಿಪ್ ಸಕ್ಸಸ್‌ಫುಲ್ ಆಗಿದೆ' : '⚠️ ಮೆಂಬರ್‌ಶಿಪ್ ಪೇಮೆಂಟ್ ಪೆಂಡಿಂಗ್ ಇದೆ'}
+                ${isPaidActive ? '✅ ಮೆಂಬರ್‌ಶಿಪ್ ಸಕ್ಸಸ್' : '⚠️ ಪೆಂಡಿಂಗ್ ಇದೆ'}
               </span>
               <button class="btn ${isPaidActive ? 'btn-danger' : 'btn-success'}" onclick="toggleShopPayment('${s.docId}', ${isPaidActive})">
                 ${isPaidActive ? 'ಪೆಂಡಿಂಗ್‌ಗೆ ಬದಲಾಯಿಸಿ' : 'ಪೇಮೆಂಟ್ ಸಕ್ಸಸ್ ಮಾಡಿ'}
               </button>
-              <button class="btn btn-danger" onclick="deleteRecord('shop_owners', '${s.docId}', 'ಅಂಗಡಿ ಮಾಲೀಕ')">ಡಿಲೀಟ್</button>
+              <button class="btn btn-danger" onclick="deleteShopRecord('${s.docId}', '${s.id}')">ಡಿಲೀಟ್</button>
             </div>
           </div>
         `;
@@ -423,16 +456,24 @@
       try {
         const newStatus = !currentStatus;
         const oneYearFromNow = Date.now() + (365 * 24 * 60 * 60 * 1000);
-
         await window.updateDoc(window.doc(window.db, "shop_owners", docId), {
           isPaid: newStatus,
           paidAt: window.serverTimestamp(),
           paidExpiryDate: newStatus ? oneYearFromNow : null
         });
+        alert(newStatus ? "🟢 ಅಂಗಡಿ ಮಾಲೀಕರ ಪೇಮೆಂಟ್ ಸಕ್ಸಸ್ ಮಾಡಲಾಗಿದೆ!" : "🔴 ಪೆಂಡಿಂಗ್‌ಗೆ ಬದಲಾಯಿಸಲಾಗಿದೆ.");
+      } catch(e) { alert("Error: " + e.message); }
+    }
 
-        alert(newStatus ? "🟢 ಅಂಗಡಿ ಮಾಲೀಕರ ಪೇಮೆಂಟ್ ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ಸಸ್ ಮಾಡಲಾಗಿದೆ!" : "🔴 ಪೇಮೆಂಟ್ ಸ್ಟೇಟಸ್ ಪೆಂಡಿಂಗ್‌ಗೆ ಬದಲಾಯಿಸಲಾಗಿದೆ.");
-      } catch(e) {
-        alert("Error: " + e.message);
+    // ಸಂಪೂರ್ಣವಾಗಿ ಅಂಗಡಿ ಮಾಲೀಕರ ಐಡಿ ಡಿಲೀಟ್ ಮಾಡುವ ಫಂಕ್ಷನ್ (ಮರು ಲಾಗಿನ್ ತಡೆಯಲು)
+    async function deleteShopRecord(docId, shopId) {
+      if (confirm(`⚠️ ಎಚ್ಚರಿಕೆ: ಈ ಅಂಗಡಿ ಮಾಲೀಕರನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲು ಬಯಸುವಿರಾ? ಇವರು ಮತ್ತೆ ಹಳೆಯ ಐಡಿ ಬಳಸಿ ಲಾಗಿನ್ ಆಗಲು ಸಾಧ್ಯವಿಲ್ಲ.`)) {
+        try {
+          await window.deleteDoc(window.doc(window.db, "shop_owners", docId));
+          // ಬ್ಲಾಕ್ ರೆಕಾರ್ಡ್ ಸೇವ್ ಮಾಡಲಾಗುವುದು ಇದರಿಂದ ಹೊಸದಾಗಿ ಲಾಗಿನ್ ಆಗಲು ಸಂದೇಶ ಬರುತ್ತದೆ
+          await window.setDoc(window.doc(window.db, "deleted_shops", shopId), { deletedAt: window.serverTimestamp() });
+          alert("ಅಂಗಡಿ ಮಾಲೀಕರ ಐಡಿ ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲಾಗಿದೆ.");
+        } catch(e) { alert("Error: " + e.message); }
       }
     }
 
@@ -447,8 +488,6 @@
         let dbOrders = allOrders; 
         let deliveredCount = dbOrders.filter(o => o.status === 'DELIVERED' || o.status === 'STEP_4').length;
         let returnedCount = dbOrders.filter(o => o.status === 'RETURNED' || o.isReturned).length;
-        
-        // ಡೆಲಿವರಿ ಬಾಯ್ ಲೆಕ್ಕಾಚಾರ: ಪ್ರತಿ ಆರ್ಡರ್‌ಗೆ ₹50 + ರಿಟರ್ನ್ ಪಿಕಪ್‌ಗೆ ₹30
         let totalDboyEarnings = (deliveredCount * 50) + (returnedCount * 30);
 
         let dboyUpi = db.upiId || 'delivery@upi';
@@ -458,40 +497,39 @@
         return `
           <div class="card-box">
             <div style="display:flex; gap:10px; align-items:center; margin-bottom:6px;">
-              <img src="${db.selfie || 'https://via.placeholder.com/60'}" style="width:50px; height:50px; object-fit:cover; border-radius:50%; border:1px solid #ccc; cursor:pointer;" onclick="openImageModal('${db.selfie}', 'ಸೆಲ್ಫಿ ಫೋಟೋ')" title="ದೊಡ್ಡದಾಗಿ ನೋಡಿ">
+              <img src="${db.selfie || 'https://via.placeholder.com/60'}" style="width:50px; height:50px; object-fit:cover; border-radius:50%; border:1px solid #ccc; cursor:pointer;" onclick="openImageModal('${db.selfie}', 'ಸೆಲ್ಫಿ ಫೋಟೋ')">
               <div>
                 <b>${db.name}</b> (ತಂದೆ: ${db.fatherName})<br>
                 ಫೋನ್: ${db.phone} | <b>ID: ${db.id}</b><br>
                 ಊರು: ${db.village}, ${db.taluk}
               </div>
             </div>
-            <div style="display:flex; gap:6px; margin:6px 0;">
-              <button class="btn btn-primary" style="font-size:0.65rem;" onclick="openImageModal('${db.aadhaarFront}', 'ಆಧಾರ್ ಫ್ರಂಟ್')">ಆಧಾರ್ ಫ್ರಂಟ್</button>
-              <button class="btn btn-primary" style="font-size:0.65rem;" onclick="openImageModal('${db.aadhaarBack}', 'ಆಧಾರ್ ಬ್ಯಾಕ್')">ಆಧಾರ್ ಬ್ಯಾಕ್</button>
-              <button class="btn btn-primary" style="font-size:0.65rem;" onclick="openImageModal('${db.selfie}', 'ಸೆಲ್ಫಿ ಫೋಟೋ')">ಸೆಲ್ಫಿ</button>
-            </div>
             <div style="background:#f1f8e9; padding:8px; border-radius:6px; font-size:0.78rem; line-height:1.4;">
-              🛵 <b>ಡೆಲಿವರಿ ಬಾಯ್ ಗಳಿಕೆ (ಫಿಕ್ಸ್ಡ್ ಲೆಕ್ಕಾಚಾರ):</b><br>
-              • ಡೆಲಿವರಿ ಕೊಟ್ಟಿದ್ದು: ${deliveredCount} ಆರ್ಡರ್ (₹50 x ${deliveredCount} = ₹${deliveredCount * 50})<br>
-              • ರಿಟರ್ನ್ ಪಿಕಪ್ ಮಾಡಿದ್ದು: ${returnedCount} ಆರ್ಡರ್ (₹30 x ${returnedCount} = ₹${returnedCount * 30})<br>
-              • <b>ಒಟ್ಟು ನೀಡಬೇಕಾದ ಮೊತ್ತ: ₹${totalDboyEarnings}</b>
+              🛵 <b>ಗಳಿಕೆ:</b> ಡೆಲಿವರಿ ಕೊಟ್ಟಿದ್ದು: ${deliveredCount} (₹50) | ರಿಟರ್ನ್: ${returnedCount} (₹30) | <b>ಒಟ್ಟು: ₹${totalDboyEarnings}</b>
             </div>
 
             <div style="margin-top:8px; display:flex; gap:6px; align-items:center;">
-              <a href="${upiLink}" class="btn btn-upi" style="flex:1; padding:8px;">
-                📱 ಡೆಲಿವರಿ ಬಾಯ್‌ಗೆ ಪೇಮೆಂಟ್ ಮಾಡಿ (₹${totalDboyEarnings})
-              </a>
-              <button class="btn btn-success" onclick="openQRModal('${qrCodeImg}', '${totalDboyEarnings}', 'ಡೆಲಿವರಿ ಬಾಯ್')" style="padding:8px;">
-                ಕ್ಯೂಆರ್ ಕೋಡ್
-              </button>
+              <a href="${upiLink}" class="btn btn-upi" style="flex:1; padding:8px;">📱 ಪೇಮೆಂಟ್ ಮಾಡಿ (₹${totalDboyEarnings})</a>
+              <button class="btn btn-success" onclick="openQRModal('${qrCodeImg}', '${totalDboyEarnings}', 'ಡೆಲಿವರಿ ಬಾಯ್')" style="padding:8px;">ಕ್ಯೂಆರ್ ಕೋಡ್</button>
             </div>
 
             <div style="text-align:right; margin-top:6px;">
-              <button class="btn btn-danger" onclick="deleteRecord('delivery_boys', '${db.docId}', 'ಡೆಲಿವರಿ ಬಾಯ್')">ಡಿಲೀಟ್ ಮಾಡಿ</button>
+              <button class="btn btn-danger" onclick="deleteDboyRecord('${db.docId}', '${db.id}')">ಡಿಲೀಟ್ ಮಾಡಿ</button>
             </div>
           </div>
         `;
       }).join('');
+    }
+
+    // ಡೆಲಿವರಿ ಬಾಯ್ ಸಂಪೂರ್ಣ ಡಿಲೀಟ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+    async function deleteDboyRecord(docId, dboyId) {
+      if (confirm(`⚠️ ಎಚ್ಚರಿಕೆ: ಈ ಡೆಲಿವರಿ ಬಾಯ್ ಅನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲು ಬಯಸುವಿರಾ?`)) {
+        try {
+          await window.deleteDoc(window.doc(window.db, "delivery_boys", docId));
+          await window.setDoc(window.doc(window.db, "deleted_dboys", dboyId), { deletedAt: window.serverTimestamp() });
+          alert("ಡೆಲಿವರಿ ಬಾಯ್ ಐಡಿ ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲಾಗಿದೆ.");
+        } catch(e) { alert("Error: " + e.message); }
+      }
     }
 
     function renderCustomers(list) {
@@ -505,35 +543,51 @@
         <div class="card-box">
           <b>ಗ್ರಾಹಕರು:</b> ${c.name} (${c.phone})<br>
           ಊರು: ${c.village}<br>
-          <b>ಖರೀದಿ ಮಾಡಿರುವ ಆರ್ಡರ್ಸ್:</b> ${c.ordersCount} | <b>ರಿಟರ್ನ್ ಕಳಿಸಿರುವುದು:</b> ${c.returnsCount} <br>
-          <span style="color:${c.returnsCount >= 3 ? '#d32f2f' : 'var(--success)'}; font-weight:bold;">
-            ${c.returnsCount >= 3 ? '⚠️ ಹೆಚ್ಚು ರಿಟರ್ನ್ ಮಾಡಿದ್ದಾರೆ! COD ಬಂದ್ ಮಾಡಬಹುದು.' : '🟢 ಸಾಮಾನ್ಯ ಗ್ರಾಹಕ'}
+          <b>ಖರೀದಿ:</b> ${c.ordersCount || 0} | <b>ರಿಟರ್ನ್:</b> ${c.returnsCount || 0} <br>
+          <span style="color:${(c.returnsCount || 0) >= 4 ? '#d32f2f' : 'var(--success)'}; font-weight:bold;">
+            ${(c.returnsCount || 0) >= 4 ? '⚠️ 4 ಬಾರಿ ರಿಟರ್ನ್ ಮಾಡಿದ್ದಾರೆ!' : '🟢 ಸಾಮಾನ್ಯ ಗ್ರಾಹಕ'}
           </span>
           <div style="margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
-            <button class="btn ${c.codBlocked ? 'btn-success' : 'btn-danger'}" onclick="toggleCodBlock('${c.phone}', ${c.codBlocked})">
-              ${c.codBlocked ? 'COD ಆನ್ ಮಾಡಿ (Allow COD)' : 'COD ಆಫ್ ಮಾಡಿ (Block COD)'}
+            <button class="btn ${c.codAllowed === false ? 'btn-success' : 'btn-danger'}" onclick="toggleCustomerCod('${c.phone}', ${c.codAllowed !== false})">
+              ${c.codAllowed === false ? 'ಕ್ಯಾಶ್ ಆನ್ ಡೆಲಿವರಿ ಆನ್ ಮಾಡಿ' : 'ಕ್ಯೂಆರ್ / ಯುಪಿಐ ಮಾತ್ರ (COD ಆಫ್)'}
             </button>
-            <button class="btn btn-danger" onclick="deleteCustomerRecord('${c.phone}')">ಡಿಲೀಟ್</button>
+            <button class="btn btn-danger" onclick="deleteCustomerRecord('${c.phone}')">ಸಂಪೂರ್ಣ ಡಿಲೀಟ್</button>
           </div>
         </div>
       `).join('');
     }
 
-    async function toggleCodBlock(phone, currentStatus) {
-      alert(`ಗ್ರಾಹಕರ (Phone: ${phone}) ಕ್ಯಾಶ್ ಆನ್ ಡೆಲಿವರಿ (COD) ಸೌಲಭ್ಯವನ್ನು ${!currentStatus ? 'ಬಂದ್ (OFF)' : 'ಪ್ರಾರಂಭ (ON)'} ಮಾಡಲಾಗಿದೆ!`);
+    // ಗ್ರಾಹಕರ COD ಹಾಗೂ UPI ಸೆಟ್ಟಿಂಗ್ ಬದಲಾಯಿಸುವ ಫಂಕ್ಷನ್
+    async function toggleCustomerCod(phone, currentStatus) {
+      try {
+        const newStatus = !currentStatus;
+        const custRef = window.doc(window.db, "customers_meta", phone);
+        await window.setDoc(custRef, { phone: phone, codAllowed: newStatus }, { merge: true });
+        alert(newStatus ? "✅ ಕ್ಯಾಶ್ ಆನ್ ಡೆಲಿವರಿ (COD) ಆನ್ ಮಾಡಲಾಗಿದೆ." : "🔒 ಕ್ಯಾಶ್ ಆನ್ ಡೆಲಿವರಿ (COD) ಬಂದ್ ಮಾಡಲಾಗಿದೆ. ಈಗ ಗ್ರಾಹಕರಿಗೆ ಯುಪಿಐ ಪೇಮೆಂಟ್ ಮಾತ್ರ ಕಾಣುತ್ತದೆ.");
+      } catch(e) { alert("Error: " + e.message); }
+    }
+
+    // ಗ್ರಾಹಕರನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+    async function deleteCustomerRecord(phone) {
+      if (confirm(`⚠️ ಎಚ್ಚರಿಕೆ: ಈ ಗ್ರಾಹಕರ ಐಡಿ ಹಾಗೂ ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲು ಬಯಸುವಿರಾ?`)) {
+        try {
+          await window.deleteDoc(window.doc(window.db, "customers_meta", phone));
+          alert("ಗ್ರಾಹಕರ ಐಡಿ ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲಾಗಿದೆ.");
+        } catch(e) { alert("Error: " + e.message); }
+      }
     }
 
     function renderReturnsTab(orders) {
       const container = document.getElementById('returnsListContainer');
-      let returnOrders = orders.filter(o => o.isReturned || o.status === 'RETURNED' || o.returnStatus === 'RETURN_REQUESTED' || o.returnStatus === 'PICKED_UP_BY_DBOY');
+      let returnOrders = orders.filter(o => o.isReturned || o.status === 'RETURNED');
 
       if (returnOrders.length === 0) {
-        container.innerHTML = '<p style="color:#777; text-align:center; padding:10px;">ಯಾವುದೇ ರಿಟರ್ನ್ ಅಥವಾ ಪಿಕ್-ಅಪ್ ಆರ್ಡರ್‌ಗಳಿಲ್ಲ.</p>';
+        container.innerHTML = '<p style="color:#777; text-align:center; padding:10px;">ಯಾವುದೇ ರಿಟರ್ನ್ ಆರ್ಡರ್‌ಗಳಿಲ್ಲ.</p>';
         return;
       }
 
       container.innerHTML = returnOrders.map(o => {
-        let isPaymentSuccess = o.paymentStatus === 'SUCCESS';
+        let isPaymentSuccess = o.returnPaymentStatus === 'SUCCESS';
         let upiLink = `upi://pay?pa=merchant@upi&pn=NamahShapur&am=${o.totalPrice}&cu=INR`;
         let qrCodeImg = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiLink)}`;
 
@@ -550,56 +604,30 @@
 
             <div style="margin-top:8px; background:#fff3e0; padding:8px; border-radius:6px; font-size:0.78rem;">
               <p><b>ಸ್ಥಿತಿ:</b> ರಿಟರ್ನ್ ಆರ್ಡರ್ ಪೇಮೆಂಟ್ ಬಾಕಿ ಇದೆ.</p>
-              
               <div style="margin-top:6px; display:flex; gap:6px; align-items:center;">
-                <a href="${upiLink}" class="btn btn-upi" style="flex:1; padding:8px;">
-                  📱 ರಿಟರ್ನ್ ಆರ್ಡರ್ ಪೇಮೆಂಟ್ ಮಾಡಿ (₹${o.totalPrice})
-                </a>
-                <button class="btn btn-success" onclick="openQRModal('${qrCodeImg}', '${o.totalPrice}', 'ರಿಟರ್ನ್ ಗ್ರಾಹಕ')" style="padding:8px;">
-                  ಕ್ಯೂಆರ್ ಕೋಡ್
-                </button>
+                <a href="${upiLink}" class="btn btn-upi" style="flex:1; padding:8px;">📱 ರಿಟರ್ನ್ ಪೇಮೆಂಟ್ ಮಾಡಿ (₹${o.totalPrice})</a>
+                <button class="btn btn-success" onclick="openQRModal('${qrCodeImg}', '${o.totalPrice}', 'ರಿಟರ್ನ್ ಗ್ರಾಹಕ')" style="padding:8px;">ಕ್ಯೂಆರ್ ಕೋಡ್</button>
               </div>
             </div>
 
             <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
               <span style="font-size:0.75rem; font-weight:bold; color:${isPaymentSuccess ? 'var(--success)' : '#d32f2f'};">
-                ${isPaymentSuccess ? '✅ ಪಾವತಿ ಸಕ್ಸಸ್‌ಫುಲ್ ಆಗಿದೆ' : '⏳ ಪಾವತಿ ಪೆಂಡಿಂಗ್‌ನಲ್ಲಿದೆ'}
+                ${isPaymentSuccess ? '✅ ಪಾವತಿ ಸಕ್ಸಸ್ ಆಗಿದೆ' : '⏳ ಪಾವತಿ ಪೆಂಡಿಂಗ್‌ನಲ್ಲಿದೆ'}
               </span>
-              ${!isPaymentSuccess ? `
-                <button class="btn btn-success" onclick="markPaymentSuccess('${o.id}')">ಪೇಮೆಂಟ್ ಸಕ್ಸಸ್ ಮಾಡಿ</button>
-              ` : ''}
+              ${!isPaymentSuccess ? `<button class="btn btn-success" onclick="markReturnPaymentSuccess('${o.id}')">ಪೇಮೆಂಟ್ ಸಕ್ಸಸ್ ಮಾಡಿ</button>` : ''}
             </div>
           </div>
         `;
       }).join('');
     }
 
-    async function markPaymentSuccess(orderId) {
+    async function markReturnPaymentSuccess(orderId) {
       try {
         await window.updateDoc(window.doc(window.db, "orders", orderId), {
-          paymentStatus: 'SUCCESS'
+          returnPaymentStatus: 'SUCCESS'
         });
         alert("ಪಾವತಿ ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ಸಸ್ ಮಾಡಲಾಗಿದೆ!");
-      } catch(e) {
-        alert("Error: " + e.message);
-      }
-    }
-
-    async function deleteRecord(collectionName, docId, roleName) {
-      if (confirm(`⚠️ ಎಚ್ಚರಿಕೆ: ಈ ${roleName} ಅನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲು ಬಯಸುವಿರಾ?`)) {
-        try {
-          await window.deleteDoc(window.doc(window.db, collectionName, docId));
-          alert(`${roleName} ಯಶಸ್ವಿಯಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲಾಗಿದೆ.`);
-        } catch(e) {
-          alert("Error: " + e.message);
-        }
-      }
-    }
-
-    async function deleteCustomerRecord(phone) {
-      if (confirm(`⚠️ ಎಚ್ಚರಿಕೆ: ಈ ಗ್ರಾಹಕರನ್ನು (Phone: ${phone}) ಡಿಲೀಟ್ ಮಾಡಲು ಬಯಸುವಿರಾ?`)) {
-        alert("ಗ್ರಾಹಕರ ದಾಖಲೆ ತೆಗೆದುಹಾಕಲಾಗಿದೆ.");
-      }
+      } catch(e) { alert("Error: " + e.message); }
     }
 
     function openImageModal(imgSrc, title) {
