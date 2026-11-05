@@ -1,10 +1,14 @@
 <!DOCTYPE html>
-<html lang="kn">
+<html lang="kn" id="masterHtmlRoot">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ನಮ್ಮ ಊರು ಶಾಪಿಂಗ್ ಮಾಸ್ಟರ್ ಪ್ಯಾನೆಲ್ | Master Panel</title>
   <link rel="icon" type="image/png" sizes="192x192" href="AR_Taxi_Booking_Go_Fast_512x512.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#e65100">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
   <!-- Firebase SDKs -->
   <script type="module">
@@ -42,7 +46,14 @@
     body { background-color: var(--bg); color: var(--dark); padding: 10px; padding-bottom: 40px; }
 
     .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-    header { background: var(--primary); color: white; padding: 12px; text-align: center; border-radius: 8px; margin-bottom: 12px; position: relative; }
+    header { background: var(--primary); color: white; padding: 12px; text-align: center; border-radius: 8px; margin-bottom: 12px; position: relative; display: flex; align-items: center; justify-content: space-between; }
+    
+    .install-btn { background: #2e7d32; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; animation: pulseInstall 1.5s infinite; }
+    @keyframes pulseInstall {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46, 125, 50, 0.7); }
+      70% { transform: scale(1.03); box-shadow: 0 0 0 6px rgba(46, 125, 50, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(46, 125, 50, 0); }
+    }
 
     /* Instapp Master Toggle Bar */
     .instapp-bar { background: #333; color: white; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.85rem; font-weight: bold; }
@@ -104,7 +115,8 @@
 
   <div class="container">
     <header>
-      <h2>👑 ನಮ್ಮ ಊರು ಶಾಪಿಂಗ್ ಮಾಸ್ಟರ್ ಪ್ಯಾನೆಲ್</h2>
+      <h2 style="font-size: 1.1rem;">👑 ಮಾಸ್ಟರ್ ಪ್ಯಾನೆಲ್</h2>
+      <button id="topInstallBtn" onclick="triggerInstallApp()" class="install-btn">📲 ಇನ್‌ಸ್ಟಾಲ್</button>
     </header>
 
     <!-- Master Instapp ON/OFF Control Bar -->
@@ -180,6 +192,48 @@
     let allOrders = [];
     let allBanners = [];
     let allWithdrawals = [];
+    let deferredPrompt = null;
+
+    window.addEventListener('load', () => {
+      checkInstallStatus();
+    });
+
+    function checkInstallStatus() {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      const isInstalledFlag = localStorage.getItem('master_app_installed_status') === 'true';
+
+      if (isStandalone || isInstalledFlag) {
+        const installBtn = document.getElementById('topInstallBtn');
+        if (installBtn) installBtn.style.display = 'none';
+      }
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      checkInstallStatus();
+    });
+
+    window.addEventListener('appinstalled', () => {
+      localStorage.setItem('master_app_installed_status', 'true');
+      const installBtn = document.getElementById('topInstallBtn');
+      if (installBtn) installBtn.style.display = 'none';
+    });
+
+    async function triggerInstallApp() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          localStorage.setItem('master_app_installed_status', 'true');
+          const installBtn = document.getElementById('topInstallBtn');
+          if (installBtn) installBtn.style.display = 'none';
+        }
+        deferredPrompt = null;
+      } else {
+        alert("ಆಪ್ ಇನ್‌ಸ್ಟಾಲ್ ಮಾಡಲು ನಿಮ್ಮ ಬ್ರೌಸರ್ ಮೇಲಿರುವ ಮೂರು ಚುಕ್ಕೆಗಳ (⋮) ಮೆನು ಕ್ಲಿಕ್ ಮಾಡಿ 'Install app' ಅಥವಾ 'Add to Home screen' ಆಯ್ಕೆಮಾಡಿ[span_0](start_span)[span_0](end_span).");
+      }
+    }
 
     window.addEventListener('DOMContentLoaded', () => {
       window.history.pushState({ page: 'master' }, '', '');
@@ -187,6 +241,11 @@
         window.history.pushState({ page: 'master' }, '', '');
       });
       loadInstappStatus();
+      checkInstallStatus();
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log("SW fail", err));
+      }
     });
 
     function verifyMasterCode() {
@@ -465,12 +524,10 @@
       } catch(e) { alert("Error: " + e.message); }
     }
 
-    // ಸಂಪೂರ್ಣವಾಗಿ ಅಂಗಡಿ ಮಾಲೀಕರ ಐಡಿ ಡಿಲೀಟ್ ಮಾಡುವ ಫಂಕ್ಷನ್ (ಮರು ಲಾಗಿನ್ ತಡೆಯಲು)
     async function deleteShopRecord(docId, shopId) {
       if (confirm(`⚠️ ಎಚ್ಚರಿಕೆ: ಈ ಅಂಗಡಿ ಮಾಲೀಕರನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲು ಬಯಸುವಿರಾ? ಇವರು ಮತ್ತೆ ಹಳೆಯ ಐಡಿ ಬಳಸಿ ಲಾಗಿನ್ ಆಗಲು ಸಾಧ್ಯವಿಲ್ಲ.`)) {
         try {
           await window.deleteDoc(window.doc(window.db, "shop_owners", docId));
-          // ಬ್ಲಾಕ್ ರೆಕಾರ್ಡ್ ಸೇವ್ ಮಾಡಲಾಗುವುದು ಇದರಿಂದ ಹೊಸದಾಗಿ ಲಾಗಿನ್ ಆಗಲು ಸಂದೇಶ ಬರುತ್ತದೆ
           await window.setDoc(window.doc(window.db, "deleted_shops", shopId), { deletedAt: window.serverTimestamp() });
           alert("ಅಂಗಡಿ ಮಾಲೀಕರ ಐಡಿ ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲಾಗಿದೆ.");
         } catch(e) { alert("Error: " + e.message); }
@@ -521,7 +578,6 @@
       }).join('');
     }
 
-    // ಡೆಲಿವರಿ ಬಾಯ್ ಸಂಪೂರ್ಣ ಡಿಲೀಟ್ ಮಾಡುವ ಫಂಕ್ಷನ್
     async function deleteDboyRecord(docId, dboyId) {
       if (confirm(`⚠️ ಎಚ್ಚರಿಕೆ: ಈ ಡೆಲಿವರಿ ಬಾಯ್ ಅನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲು ಬಯಸುವಿರಾ?`)) {
         try {
@@ -557,7 +613,6 @@
       `).join('');
     }
 
-    // ಗ್ರಾಹಕರ COD ಹಾಗೂ UPI ಸೆಟ್ಟಿಂಗ್ ಬದಲಾಯಿಸುವ ಫಂಕ್ಷನ್
     async function toggleCustomerCod(phone, currentStatus) {
       try {
         const newStatus = !currentStatus;
@@ -567,7 +622,6 @@
       } catch(e) { alert("Error: " + e.message); }
     }
 
-    // ಗ್ರಾಹಕರನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡುವ ಫಂಕ್ಷನ್
     async function deleteCustomerRecord(phone) {
       if (confirm(`⚠️ ಎಚ್ಚರಿಕೆ: ಈ ಗ್ರಾಹಕರ ಐಡಿ ಹಾಗೂ ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲು ಬಯಸುವಿರಾ?`)) {
         try {
