@@ -40,8 +40,6 @@
     window.query = query;
     window.where = where;
     window.serverTimestamp = serverTimestamp;
-
-    window.initMasterApp();
   </script>
 
   <style>
@@ -67,10 +65,10 @@
     input:checked + .slider { background-color: var(--success); }
     input:checked + .slider:before { transform: translateX(26px); }
 
-    /* Action Password Overlay (Initially Hidden) */
-    #actionAuthOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 99999; display: none; justify-content: center; align-items: center; padding: 20px; }
-    .auth-box { background: white; padding: 25px; border-radius: 10px; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-    .auth-box input { width: 100%; padding: 12px; margin: 12px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; text-align: center; }
+    /* Login & Action Password Overlay */
+    #authOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 99999; display: flex; justify-content: center; align-items: center; padding: 20px; }
+    .auth-box { background: white; padding: 25px; border-radius: 10px; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+    .auth-box input, .auth-box select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; }
 
     .master-nav { display: flex; gap: 4px; margin-bottom: 15px; flex-wrap: wrap; }
     .m-btn { flex: 1; min-width: 18%; padding: 8px 2px; border: none; background: #e0e0e0; border-radius: 6px; font-weight: bold; font-size: 0.68rem; cursor: pointer; text-align: center; }
@@ -91,16 +89,18 @@
 </head>
 <body>
 
-  <!-- Action Password Overlay (Only asks when Delete or QR/Payment is clicked) -->
-  <div id="actionAuthOverlay">
+  <!-- Mandatory Login Overlay (First Page) -->
+  <div id="authOverlay">
     <div class="auth-box">
-      <h3>🔐 ಮಾಸ್ಟರ್ ಭದ್ರತಾ ಕೋಡ್</h3>
-      <p style="font-size: 0.8rem; color: #666; margin-top: 5px;" id="authActionDesc">ಈ ಕ್ರಿಯೆಯನ್ನು ಮಾಡಲು ರಹಸ್ಯ ಕೋಡ್ ನಮೂದಿಸಿ</p>
-      <input type="password" id="masterCodeInput" placeholder="ಪಾಸ್‌ವರ್ಡ್ ಹಾಕಿ">
-      <div style="display:flex; gap:10px;">
-        <button class="btn btn-danger" style="flex:1; padding:10px;" onclick="closeActionAuth()">ಕ್ಯಾನ್ಸಲ್</button>
-        <button class="btn btn-success" style="flex:1; padding:10px;" onclick="verifyMasterActionCode()">ದೃಢೀಕರಿಸಿ</button>
-      </div>
+      <h3>👑 ಮಾಸ್ಟರ್ ಲಾಗಿನ್ ಪುಟ</h3>
+      <p style="font-size: 0.78rem; color: #666; margin-top: 4px;">ದಯವಿಟ್ಟು ನಿಮ್ಮ ವಿವರ ಹಾಗೂ ರಹಸ್ಯ ಕೋಡ್ ನಮೂದಿಸಿ</p>
+      
+      <input type="text" id="loginName" placeholder="ನಿಮ್ಮ ಹೆಸರು ಹಾಕಿ">
+      <input type="tel" id="loginPhone" placeholder="ಮೊಬೈಲ್ ನಂಬರ್ ಹಾಕಿ">
+      <input type="text" id="loginUpi" placeholder="ಮಾಸ್ಟರ್ UPI ID ಅಥವಾ ಕ್ಯೂಆರ್ ಲಿಂಕ್ ಹಾಕಿ">
+      <input type="password" id="masterCodeInput" placeholder="ರಹಸ್ಯ ಕೋಡ್ (9353444070)">
+      
+      <button class="btn btn-success" style="width:100%; padding:10px; font-size:0.9rem; margin-top:6px;" onclick="verifyMasterLogin()">ಲಾಗಿನ್ ಮಾಡಿ ಮುಖಪುಟಕ್ಕೆ ಹೋಗಿ</button>
     </div>
   </div>
 
@@ -118,7 +118,7 @@
     </div>
   </div>
 
-  <div class="container">
+  <div class="container" id="mainContainer" style="display:none;">
     <header>
       <h2 style="font-size: 1.1rem;">👑 ಮಾಸ್ಟರ್ ಪ್ಯಾನೆಲ್</h2>
       <button id="topInstallBtn" onclick="triggerInstallApp()" class="install-btn">📲 ಇನ್‌ಸ್ಟಾಲ್</button>
@@ -195,12 +195,37 @@
     let allBanners = [];
     let allWithdrawals = [];
     let deferredPrompt = null;
-    let pendingActionCallback = null;
 
-    window.initMasterApp = function() {
-      loadMasterData();
+    window.addEventListener('load', () => {
+      if (localStorage.getItem('master_logged_in') === 'true') {
+        document.getElementById('authOverlay').style.display = 'none';
+        document.getElementById('mainContainer').style.display = 'block';
+        loadMasterData();
+      }
       checkInstallStatus();
-    };
+    });
+
+    function verifyMasterLogin() {
+      const name = document.getElementById('loginName').value.trim();
+      const phone = document.getElementById('loginPhone').value.trim();
+      const code = document.getElementById('masterCodeInput').value.trim();
+
+      if (!name || !phone) {
+        alert("ದಯವಿಟ್ಟು ಹೆಸರು ಮತ್ತು ಮೊಬೈಲ್ ನಂಬರ್ ನಮೂದಿಸಿ.");
+        return;
+      }
+      if (code === "9353444070") {
+        localStorage.setItem('master_logged_in', 'true');
+        localStorage.setItem('master_name', name);
+        localStorage.setItem('master_phone', phone);
+        document.getElementById('authOverlay').style.display = 'none';
+        document.getElementById('mainContainer').style.display = 'block';
+        loadMasterData();
+        alert("✅ ಲಾಗಿನ್ ಯಶಸ್ವಿಯಾಗಿದೆ! ಮುಖಪುಟ ತೆರೆಯಲಾಗಿದೆ.");
+      } else {
+        alert("ತಪ್ಪು ಕೋಡ್! ದಯವಿಟ್ಟು ಸರಿಯಾದ ಕೋಡ್ (9353444070) ನಮೂದಿಸಿ.");
+      }
+    }
 
     function checkInstallStatus() {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -238,28 +263,16 @@
       }
     }
 
-    function requestMasterPassword(actionDescription, callback) {
-      document.getElementById('authActionDesc').innerText = actionDescription;
-      document.getElementById('masterCodeInput').value = '';
-      document.getElementById('actionAuthOverlay').style.display = 'flex';
-      pendingActionCallback = callback;
-    }
-
-    function closeActionAuth() {
-      document.getElementById('actionAuthOverlay').style.display = 'none';
-      pendingActionCallback = null;
-    }
-
-    function verifyMasterActionCode() {
-      const code = document.getElementById('masterCodeInput').value.trim();
-      if (code === "9353444070") {
-        document.getElementById('actionAuthOverlay').style.display = 'none';
-        if (pendingActionCallback) {
-          pendingActionCallback();
-          pendingActionCallback = null;
-        }
+    function confirmAndDeleteWithCode(actionTitle, performDeleteCallback) {
+      let codeInput = prompt(`⚠️ ಎಚ್ಚರಿಕೆ: ${actionTitle}\n\nಮುಂದುವರಿಯಲು ಮಾಸ್ಟರ್ ಕೋಡ್ (9353444070) ನಮೂದಿಸಿ:`);
+      if (codeInput === null) {
+        alert("ಡಿಲೀಟ್ ಕ್ರಿಯೆಯನ್ನು ಕ್ಯಾನ್ಸಲ್ ಮಾಡಲಾಗಿದೆ.");
+        return;
+      }
+      if (codeInput.trim() === "9353444070") {
+        performDeleteCallback();
       } else {
-        alert("ತಪ್ಪು ಕೋಡ್! ದಯವಿಟ್ಟು ಸರಿಯಾದ ಕೋಡ್ ನಮೂದಿಸಿ.");
+        alert("❌ ತಪ್ಪು ಕೋಡ್! ಡಿಲೀಟ್ ಮಾಡಲಾಗಿಲ್ಲ.");
       }
     }
 
@@ -374,19 +387,10 @@
         <div class="card-box">
           <img src="${b.imageUrl}" class="banner-preview-img">
           <div style="text-align:right;">
-            <button class="btn btn-danger" onclick="confirmAndDeleteRecord('master_banners', '${b.docId}', 'ಬ್ಯಾನರ್')">ಡಿಲೀಟ್ ಮಾಡಿ</button>
+            <button class="btn btn-danger" onclick="confirmAndDeleteWithCode('ಈ ಜಾಹೀರಾತು ಬ್ಯಾನರ್ ಡಿಲೀಟ್ ಮಾಡಲು', async () => { await window.deleteDoc(window.doc(window.db, 'master_banners', '${b.docId}')); alert('ಡಿಲೀಟ್ ಮಾಡಲಾಗಿದೆ.'); })">ಡಿಲೀಟ್ ಮಾಡಿ</button>
           </div>
         </div>
       `).join('');
-    }
-
-    function confirmAndDeleteRecord(colName, docId, name) {
-      requestMasterPassword(`ಈ ${name} ಅನ್ನು ಡಿಲೀಟ್ ಮಾಡಲು ಕೋಡ್ ನಮೂದಿಸಿ`, async () => {
-        try {
-          await window.deleteDoc(window.doc(window.db, colName, docId));
-          alert("ಯಶಸ್ವಿಯಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲಾಗಿದೆ.");
-        } catch(e) { alert("Error: " + e.message); }
-      });
     }
 
     function renderWithdrawals(list) {
@@ -405,23 +409,21 @@
               <span style="font-weight:bold; color:${isApproved ? 'var(--success)' : '#e65100'};">
                 ${isApproved ? '✅ ಪಾವತಿಸಲಾಗಿದೆ' : '⏳ ಪೆಂಡಿಂಗ್ ಇದೆ'}
               </span>
-              ${!isApproved ? `<button class="btn btn-success" onclick="confirmAndApproveWithdrawal('${w.docId}')">✔ ಪೇಮೆಂಟ್ ಪೂರ್ಣಗೊಳಿಸಿ</button>` : ''}
+              ${!isApproved ? `<button class="btn btn-success" onclick="approveWithdrawal('${w.docId}')">✔ ಪೇಮೆಂಟ್ ಪೂರ್ಣಗೊಳಿಸಿ</button>` : ''}
             </div>
           </div>
         `;
       }).join('');
     }
 
-    function confirmAndApproveWithdrawal(docId) {
-      requestMasterPassword("ವಿತ್‌ಡ್ರಾ ಪೇಮೆಂಟ್ ಆಪ್ರೂವ್ ಮಾಡಲು ಕೋಡ್ ನಮೂದಿಸಿ", async () => {
-        try {
-          await window.updateDoc(window.doc(window.db, "withdraw_requests", docId), {
-            status: 'APPROVED',
-            approvedAt: window.serverTimestamp()
-          });
-          alert("✅ ವಿತ್‌ಡ್ರಾ ಪಾವತಿಯನ್ನು ಆಪ್ರೂವ್ ಮಾಡಲಾಗಿದೆ!");
-        } catch(e) { alert("Error: " + e.message); }
-      });
+    async function approveWithdrawal(docId) {
+      try {
+        await window.updateDoc(window.doc(window.db, "withdraw_requests", docId), {
+          status: 'APPROVED',
+          approvedAt: window.serverTimestamp()
+        });
+        alert("✅ ವಿತ್‌ಡ್ರಾ ಪಾವತಿಯನ್ನು ಆಪ್ರೂವ್ ಮಾಡಲಾಗಿದೆ!");
+      } catch(e) { alert("Error: " + e.message); }
     }
 
     function processCustomers() {
@@ -499,8 +501,8 @@
             </div>
 
             <div style="margin-top:6px; display:flex; gap:6px; align-items:center;">
-              <a href="${upiLink}" onclick="event.preventDefault(); securePayAction('${upiLink}')" class="btn btn-upi" style="flex:1; padding:8px;">📱 ಪೇಮೆಂಟ್ ಮಾಡಿ (₹${payableToShop})</a>
-              <button class="btn btn-success" onclick="secureQRAction('${qrCodeImg}', '${payableToShop}', 'ಅಂಗಡಿ ಮಾಲೀಕ')" style="padding:8px;">ಕ್ಯೂಆರ್ ಕೋಡ್</button>
+              <a href="${upiLink}" class="btn btn-upi" style="flex:1; padding:8px;">📱 ಪೇಮೆಂಟ್ ಮಾಡಿ (₹${payableToShop})</a>
+              <button class="btn btn-success" onclick="openQRModal('${qrCodeImg}', '${payableToShop}', 'ಅಂಗಡಿ ಮಾಲೀಕ')" style="padding:8px;">ಕ್ಯೂಆರ್ ಕೋಡ್</button>
             </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
@@ -510,38 +512,24 @@
               <button class="btn ${isPaidActive ? 'btn-danger' : 'btn-success'}" onclick="toggleShopPayment('${s.docId}', ${isPaidActive})">
                 ${isPaidActive ? 'ಪೆಂಡಿಂಗ್‌ಗೆ ಬದಲಾಯಿಸಿ' : 'ಪೇಮೆಂಟ್ ಸಕ್ಸಸ್ ಮಾಡಿ'}
               </button>
-              <button class="btn btn-danger" onclick="confirmAndDeleteShop('${s.docId}', '${s.id}')">ಸಂಪೂರ್ಣ ಡಿಲೀಟ್</button>
+              <button class="btn btn-danger" onclick="confirmAndDeleteWithCode('ಈ ಅಂಗಡಿ ಮಾಲೀಕರನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲು', async () => { await window.deleteDoc(window.doc(window.db, 'shop_owners', '${s.docId}')); alert('ಅಂಗಡಿ ಸಂಪೂರ್ಣ ಡಿಲೀಟ್ ಮಾಡಲಾಗಿದೆ.'); })">ಸಂಪೂರ್ಣ ಡಿಲೀಟ್</button>
             </div>
           </div>
         `;
       }).join('');
     }
 
-    function securePayAction(url) {
-      requestMasterPassword("ಪೇಮೆಂಟ್ ಮಾಡಲು ಕೋಡ್ ನಮೂದಿಸಿ", () => {
-        window.open(url, '_blank');
-      });
-    }
-
-    function secureQRAction(qrImg, price, title) {
-      requestMasterPassword("ಕ್ಯೂಆರ್ ಕೋಡ್ ವೀಕ್ಷಿಸಲು ಕೋಡ್ ನಮೂದಿಸಿ", () => {
-        openQRModal(qrImg, price, title);
-      });
-    }
-
-    function confirmAndDeleteShop(docId, shopId) {
-      requestMasterPassword("ಅಂಗಡಿ ಮಾಲೀಕರನ್ನು ಡಿಲೀಟ್ ಮಾಡಲು ಕೋಡ್ ನಮೂದಿಸಿ", async () => {
-        try {
-          await window.deleteDoc(window.doc(window.db, "shop_owners", docId));
-          const prodQuery = window.query(window.collection(window.db, "products"), window.where("shopId", "==", shopId));
-          const prodSnap = await window.getDocs(prodQuery);
-          let deletePromises = [];
-          prodSnap.forEach(pDoc => { deletePromises.push(window.deleteDoc(pDoc.ref)); });
-          await Promise.all(deletePromises);
-          await window.setDoc(window.doc(window.db, "deleted_shops", shopId), { deletedAt: window.serverTimestamp() });
-          alert("ಅಂಗಡಿ ಮಾಲೀಕರು ಮತ್ತು ಅವರ ಎಲ್ಲಾ ಉತ್ಪನ್ನಗಳು ಸಂಪೂರ್ಣವಾಗಿ ಅಳಿಸಲ್ಪಟ್ಟಿವೆ.");
-        } catch(e) { alert("Error: " + e.message); }
-      });
+    async function toggleShopPayment(docId, currentStatus) {
+      try {
+        const newStatus = !currentStatus;
+        const oneYearFromNow = Date.now() + (365 * 24 * 60 * 60 * 1000);
+        await window.updateDoc(window.doc(window.db, "shop_owners", docId), {
+          isPaid: newStatus,
+          paidAt: window.serverTimestamp(),
+          paidExpiryDate: newStatus ? oneYearFromNow : null
+        });
+        alert(newStatus ? "🟢 ಅಂಗಡಿ ಮಾಲೀಕರ ಪೇಮೆಂಟ್ ಸಕ್ಸಸ್ ಮಾಡಲಾಗಿದೆ!" : "🔴 ಪೆಂಡಿಂಗ್‌ಗೆ ಬದಲಾಯಿಸಲಾಗಿದೆ.");
+      } catch(e) { alert("Error: " + e.message); }
     }
 
     function renderDeliveryBoys(list) {
@@ -577,30 +565,20 @@
               </div>
             </div>
             <div style="background:#f1f8e9; padding:8px; border-radius:6px; font-size:0.78rem; line-height:1.4;">
-              🛵 <b>ಗಳಿಕೆ (ರೂ. 100 ಫಿಕ್ಸ್ಡ್ + 10% ಕಮಿಷನ್):</b> ಡೆಲಿವರಿ ಕೊಟ್ಟಿದ್ದು: ${deliveredCount} | <b>ಒಟ್ಟು: ₹${totalDboyEarnings}</b>
+              🛵 <b>ಗಳಿಕೆ:</b> ಡೆಲಿವರಿ ಕೊಟ್ಟಿದ್ದು: ${deliveredCount} | <b>ಒಟ್ಟು: ₹${totalDboyEarnings}</b>
             </div>
 
             <div style="margin-top:8px; display:flex; gap:6px; align-items:center;">
-              <a href="${upiLink}" onclick="event.preventDefault(); securePayAction('${upiLink}')" class="btn btn-upi" style="flex:1; padding:8px;">📱 ಪೇಮೆಂಟ್ ಮಾಡಿ (₹${totalDboyEarnings})</a>
-              <button class="btn btn-success" onclick="secureQRAction('${qrCodeImg}', '${totalDboyEarnings}', 'ಡೆಲಿವರಿ ಬಾಯ್')" style="padding:8px;">ಕ್ಯೂಆರ್ ಕೋಡ್</button>
+              <a href="${upiLink}" class="btn btn-upi" style="flex:1; padding:8px;">📱 ಪೇಮೆಂಟ್ ಮಾಡಿ (₹${totalDboyEarnings})</a>
+              <button class="btn btn-success" onclick="openQRModal('${qrCodeImg}', '${totalDboyEarnings}', 'ಡೆಲಿವರಿ ಬಾಯ್')" style="padding:8px;">ಕ್ಯೂಆರ್ ಕೋಡ್</button>
             </div>
 
             <div style="text-align:right; margin-top:6px;">
-              <button class="btn btn-danger" onclick="confirmAndDeleteDboy('${db.docId}', '${db.id}')">ಸಂಪೂರ್ಣ ಡಿಲೀಟ್</button>
+              <button class="btn btn-danger" onclick="confirmAndDeleteWithCode('ಈ ಡೆಲಿವರಿ ಬಾಯ್ ಅನ್ನು ಡಿಲೀಟ್ ಮಾಡಲು', async () => { await window.deleteDoc(window.doc(window.db, 'delivery_boys', '${db.docId}')); alert('ಡಿಲೀಟ್ ಮಾಡಲಾಗಿದೆ.'); })">ಸಂಪೂರ್ಣ ಡಿಲೀಟ್</button>
             </div>
           </div>
         `;
       }).join('');
-    }
-
-    function confirmAndDeleteDboy(docId, dboyId) {
-      requestMasterPassword("ಡೆಲಿವರಿ ಬಾಯ್ ಅನ್ನು ಡಿಲೀಟ್ ಮಾಡಲು ಕೋಡ್ ನಮೂದಿಸಿ", async () => {
-        try {
-          await window.deleteDoc(window.doc(window.db, "delivery_boys", docId));
-          await window.setDoc(window.doc(window.db, "deleted_dboys", dboyId), { deletedAt: window.serverTimestamp() });
-          alert("ಡೆಲಿವರಿ ಬಾಯ್ ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡಲಾಗಿದೆ.");
-        } catch(e) { alert("Error: " + e.message); }
-      });
     }
 
     function renderCustomers(list) {
@@ -622,7 +600,7 @@
             <button class="btn ${c.codAllowed === false ? 'btn-success' : 'btn-danger'}" onclick="toggleCustomerCod('${c.phone}', ${c.codAllowed !== false})">
               ${c.codAllowed === false ? 'ಕ್ಯಾಶ್ ಆನ್ ಡೆಲಿವರಿ ಆನ್ ಮಾಡಿ' : 'ಕ್ಯೂಆರ್ / ಯುಪಿಐ ಮಾತ್ರ (COD ಆಫ್)'}
             </button>
-            <button class="btn btn-danger" onclick="confirmAndDeleteCustomer('${c.phone}')">ಸಂಪೂರ್ಣ ಡಿಲೀಟ್</button>
+            <button class="btn btn-danger" onclick="confirmAndDeleteWithCode('ಈ ಗ್ರಾಹಕರ ದಾಖಲೆಯನ್ನು ಡಿಲೀಟ್ ಮಾಡಲು', async () => { await window.deleteDoc(window.doc(window.db, 'customers_meta', '${c.phone}')); alert('ಡಿಲೀಟ್ ಮಾಡಲಾಗಿದೆ.'); })">ಸಂಪೂರ್ಣ ಡಿಲೀಟ್</button>
           </div>
         </div>
       `).join('');
@@ -635,20 +613,6 @@
         await window.setDoc(custRef, { phone: phone, codAllowed: newStatus }, { merge: true });
         alert(newStatus ? "✅ ಕ್ಯಾಶ್ ಆನ್ ಡೆಲಿವರಿ (COD) ಆನ್ ಮಾಡಲಾಗಿದೆ." : "🔒 ಕ್ಯಾಶ್ ಆನ್ ಡೆಲಿವರಿ (COD) ಬಂದ್ ಮಾಡಲಾಗಿದೆ.");
       } catch(e) { alert("Error: " + e.message); }
-    }
-
-    function confirmAndDeleteCustomer(phone) {
-      requestMasterPassword("ಗ್ರಾಹಕರ ವಿವರಗಳನ್ನು ಡಿಲೀಟ್ ಮಾಡಲು ಕೋಡ್ ನಮೂದಿಸಿ", async () => {
-        try {
-          await window.deleteDoc(window.doc(window.db, "customers_meta", phone));
-          const orderQuery = window.query(window.collection(window.db, "orders"), window.where("customer.phone", "==", phone));
-          const orderSnap = await window.getDocs(orderQuery);
-          let promises = [];
-          orderSnap.forEach(oDoc => { promises.push(window.deleteDoc(oDoc.ref)); });
-          await Promise.all(promises);
-          alert("ಗ್ರಾಹಕರ ಸಂಪೂರ್ಣ ಐಡಿ ಹಾಗೂ ಆರ್ಡರ್‌ಗಳು ಡಿಲೀಟ್ ಮಾಡಲಾಗಿದೆ.");
-        } catch(e) { alert("Error: " + e.message); }
-      });
     }
 
     function renderReturnsTab(orders) {
@@ -679,8 +643,8 @@
             <div style="margin-top:8px; background:#fff3e0; padding:8px; border-radius:6px; font-size:0.78rem;">
               <p><b>ಸ್ಥಿತಿ:</b> ರಿಟರ್ನ್ ಆರ್ಡರ್ ಪೇಮೆಂಟ್ ಬಾಕಿ ಇದೆ.</p>
               <div style="margin-top:6px; display:flex; gap:6px; align-items:center;">
-                <a href="${upiLink}" onclick="event.preventDefault(); securePayAction('${upiLink}')" class="btn btn-upi" style="flex:1; padding:8px;">📱 ರಿಟರ್ನ್ ಪೇಮೆಂಟ್ ಮಾಡಿ (₹${o.totalPrice})</a>
-                <button class="btn btn-success" onclick="secureQRAction('${qrCodeImg}', '${o.totalPrice}', 'ರಿಟರ್ನ್ ಗ್ರಾಹಕ')" style="padding:8px;">ಕ್ಯೂಆರ್ ಕೋಡ್</button>
+                <a href="${upiLink}" class="btn btn-upi" style="flex:1; padding:8px;">📱 ರಿಟರ್ನ್ ಪೇಮೆಂಟ್ ಮಾಡಿ (₹${o.totalPrice})</a>
+                <button class="btn btn-success" onclick="openQRModal('${qrCodeImg}', '${o.totalPrice}', 'ರಿಟರ್ನ್ ಗ್ರಾಹಕ')" style="padding:8px;">ಕ್ಯೂಆರ್ ಕೋಡ್</button>
               </div>
             </div>
 
@@ -722,19 +686,6 @@
     }
 
     function closeImageModal() { document.getElementById('imageModal').style.display = 'none'; }
-
-    async function toggleShopPayment(docId, currentStatus) {
-      try {
-        const newStatus = !currentStatus;
-        const oneYearFromNow = Date.now() + (365 * 24 * 60 * 60 * 1000);
-        await window.updateDoc(window.doc(window.db, "shop_owners", docId), {
-          isPaid: newStatus,
-          paidAt: window.serverTimestamp(),
-          paidExpiryDate: newStatus ? oneYearFromNow : null
-        });
-        alert(newStatus ? "🟢 ಅಂಗಡಿ ಮಾಲೀಕರ ಪೇಮೆಂಟ್ ಸಕ್ಸಸ್ ಮಾಡಲಾಗಿದೆ!" : "🔴 ಪೆಂಡಿಂಗ್‌ಗೆ ಬದಲಾಯಿಸಲಾಗಿದೆ.");
-      } catch(e) { alert("Error: " + e.message); }
-    }
 
     function filterMasterData() {
       const q = document.getElementById('masterSearch').value.toLowerCase();
