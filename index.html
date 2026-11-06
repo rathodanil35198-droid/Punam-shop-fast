@@ -65,10 +65,10 @@
     input:checked + .slider { background-color: var(--success); }
     input:checked + .slider:before { transform: translateX(26px); }
 
-    /* Login & Action Password Overlay */
-    #authOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 99999; display: flex; justify-content: center; align-items: center; padding: 20px; }
-    .auth-box { background: white; padding: 25px; border-radius: 10px; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
-    .auth-box input, .auth-box select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; }
+    /* Login Overlay */
+    #authOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 99999; display: flex; justify-content: center; align-items: center; padding: 20px; overflow-y: auto; }
+    .auth-box { background: white; padding: 20px; border-radius: 10px; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+    .auth-box input { width: 100%; padding: 10px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; }
 
     .master-nav { display: flex; gap: 4px; margin-bottom: 15px; flex-wrap: wrap; }
     .m-btn { flex: 1; min-width: 18%; padding: 8px 2px; border: none; background: #e0e0e0; border-radius: 6px; font-weight: bold; font-size: 0.68rem; cursor: pointer; text-align: center; }
@@ -92,15 +92,21 @@
   <!-- Mandatory Login Overlay (First Page) -->
   <div id="authOverlay">
     <div class="auth-box">
-      <h3>👑 ಮಾಸ್ಟರ್ ಲಾಗಿನ್ ಪುಟ</h3>
-      <p style="font-size: 0.78rem; color: #666; margin-top: 4px;">ದಯವಿಟ್ಟು ನಿಮ್ಮ ವಿವರ ಹಾಗೂ ರಹಸ್ಯ ಕೋಡ್ ನಮೂದಿಸಿ</p>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h3 style="font-size:1rem;">👑 ಮಾಸ್ಟರ್ ಲಾಗಿನ್ ಪುಟ</h3>
+        <button onclick="triggerInstallApp()" class="install-btn" style="font-size:0.65rem; padding:4px 8px;">📲 ಇನ್‌ಸ್ಟಾಲ್</button>
+      </div>
+      <p style="font-size: 0.75rem; color: #666; margin-bottom: 8px;">ನಿಮ್ಮ ವಿವರ ಹಾಗೂ ಕ್ಯೂಆರ್ ಕೋಡ್ ಅಪ್ಲೋಡ್ ಮಾಡಿ</p>
       
       <input type="text" id="loginName" placeholder="ನಿಮ್ಮ ಹೆಸರು ಹಾಕಿ">
       <input type="tel" id="loginPhone" placeholder="ಮೊಬೈಲ್ ನಂಬರ್ ಹಾಕಿ">
-      <input type="text" id="loginUpi" placeholder="ಮಾಸ್ಟರ್ UPI ID ಅಥವಾ ಕ್ಯೂಆರ್ ಲಿಂಕ್ ಹಾಕಿ">
+      
+      <div style="text-align:left; font-size:0.75rem; color:#444; margin-top:4px;">ಕ್ಯೂಆರ್ ಕೋಡ್ ಫೋಟೋ ಅಪ್ಲೋಡ್ ಮಾಡಿ:</div>
+      <input type="file" id="loginQrFile" accept="image/*" style="width:100%; padding:6px; margin:4px 0; border:1px solid #ccc; border-radius:6px; font-size:0.8rem;">
+      
       <input type="password" id="masterCodeInput" placeholder="ರಹಸ್ಯ ಕೋಡ್ (9353444070)">
       
-      <button class="btn btn-success" style="width:100%; padding:10px; font-size:0.9rem; margin-top:6px;" onclick="verifyMasterLogin()">ಲಾಗಿನ್ ಮಾಡಿ ಮುಖಪುಟಕ್ಕೆ ಹೋಗಿ</button>
+      <button class="btn btn-success" style="width:100%; padding:10px; font-size:0.85rem; margin-top:8px;" onclick="verifyMasterLogin()">ಲಾಗಿನ್ ಮಾಡಿ ಮುಖಪುಟಕ್ಕೆ ಹೋಗಿ</button>
     </div>
   </div>
 
@@ -205,47 +211,14 @@
       checkInstallStatus();
     });
 
-    function verifyMasterLogin() {
-      const name = document.getElementById('loginName').value.trim();
-      const phone = document.getElementById('loginPhone').value.trim();
-      const code = document.getElementById('masterCodeInput').value.trim();
-
-      if (!name || !phone) {
-        alert("ದಯವಿಟ್ಟು ಹೆಸರು ಮತ್ತು ಮೊಬೈಲ್ ನಂಬರ್ ನಮೂದಿಸಿ.");
-        return;
-      }
-      if (code === "9353444070") {
-        localStorage.setItem('master_logged_in', 'true');
-        localStorage.setItem('master_name', name);
-        localStorage.setItem('master_phone', phone);
-        document.getElementById('authOverlay').style.display = 'none';
-        document.getElementById('mainContainer').style.display = 'block';
-        loadMasterData();
-        alert("✅ ಲಾಗಿನ್ ಯಶಸ್ವಿಯಾಗಿದೆ! ಮುಖಪುಟ ತೆರೆಯಲಾಗಿದೆ.");
-      } else {
-        alert("ತಪ್ಪು ಕೋಡ್! ದಯವಿಟ್ಟು ಸರಿಯಾದ ಕೋಡ್ (9353444070) ನಮೂದಿಸಿ.");
-      }
-    }
-
-    function checkInstallStatus() {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-      const isInstalledFlag = localStorage.getItem('master_app_installed_status') === 'true';
-      if (isStandalone || isInstalledFlag) {
-        const installBtn = document.getElementById('topInstallBtn');
-        if (installBtn) installBtn.style.display = 'none';
-      }
-    }
-
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      checkInstallStatus();
     });
 
     window.addEventListener('appinstalled', () => {
       localStorage.setItem('master_app_installed_status', 'true');
-      const installBtn = document.getElementById('topInstallBtn');
-      if (installBtn) installBtn.style.display = 'none';
+      alert("✅ ಆಪ್ ಯಶಸ್ವಿಯಾಗಿ ನಿಮ್ಮ ಮೊಬೈಲ್ ಸ್ಕ್ರೀನ್‌ನಲ್ಲಿ ಇನ್‌ಸ್ಟಾಲ್ ಆಗಿದೆ!");
     });
 
     async function triggerInstallApp() {
@@ -254,12 +227,55 @@
         const { outcome } = await deferredPrompt.userChoice;
         if (outcome === 'accepted') {
           localStorage.setItem('master_app_installed_status', 'true');
-          const installBtn = document.getElementById('topInstallBtn');
-          if (installBtn) installBtn.style.display = 'none';
         }
         deferredPrompt = null;
       } else {
-        alert("ಆಪ್ ಇನ್‌ಸ್ಟಾಲ್ ಮಾಡಲು ನಿಮ್ಮ ಬ್ರೌಸರ್ ಮೇಲಿರುವ ಮೂರು ಚುಕ್ಕೆಗಳ (⋮) ಮೆನು ಕ್ಲಿಕ್ ಮಾಡಿ 'Install app' ಅಥವಾ 'Add to Home screen' ಆಯ್ಕೆಮಾಡಿ.");
+        alert("ಮೊಬೈಲ್ ಸ್ಕ್ರೀನ್‌ನಲ್ಲಿ ಆಪ್ ಸೇವ್ (इन्स्टॉल) ಮಾಡಲು:\n\n೧. ಬ್ರೌಸರ್ ಮೇಲಿರುವ ಮೂರು ಚುಕ್ಕೆಗಳ (⋮) ಮೆನು ಕ್ಲಿಕ್ ಮಾಡಿ.\n೨. 'Install app' ಅಥವಾ 'Add to Home screen' ಆಯ್ಕೆಮಾಡಿ.");
+      }
+    }
+
+    function verifyMasterLogin() {
+      const name = document.getElementById('loginName').value.trim();
+      const phone = document.getElementById('loginPhone').value.trim();
+      const code = document.getElementById('masterCodeInput').value.trim();
+      const qrFile = document.getElementById('loginQrFile').files[0];
+
+      if (!name || !phone) {
+        alert("⚠️ ದಯವಿಟ್ಟು ಹೆಸರು ಮತ್ತು ಮೊಬೈಲ್ ನಂಬರ್ ನಮೂದಿಸಿ.");
+        return;
+      }
+      if (code !== "9353444070") {
+        alert("❌ ತಪ್ಪು ರಹಸ್ಯ ಕೋಡ್! ದಯವಿಟ್ಟು ಸರಿಯಾದ ಕೋಡ್ (9353444070) ನಮೂದಿಸಿ.");
+        return;
+      }
+
+      if (qrFile) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          localStorage.setItem('master_qr_img', e.target.result);
+          completeLogin(name, phone);
+        };
+        reader.readAsDataURL(qrFile);
+      } else {
+        completeLogin(name, phone);
+      }
+    }
+
+    function completeLogin(name, phone) {
+      localStorage.setItem('master_logged_in', 'true');
+      localStorage.setItem('master_name', name);
+      localStorage.setItem('master_phone', phone);
+      document.getElementById('authOverlay').style.display = 'none';
+      document.getElementById('mainContainer').style.display = 'block';
+      loadMasterData();
+      alert("✅ ಲಾಗಿನ್ ಯಶಸ್ವಿಯಾಗಿದೆ! ಮುಖಪುಟ ತೆರೆಯಲಾಗಿದೆ.");
+    }
+
+    function checkInstallStatus() {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      if (isStandalone || localStorage.getItem('master_app_installed_status') === 'true') {
+        const topBtn = document.getElementById('topInstallBtn');
+        if (topBtn) topBtn.style.display = 'none';
       }
     }
 
@@ -480,9 +496,7 @@
         let isPaidActive = s.isPaid || false;
         if (s.paidExpiryDate && now > s.paidExpiryDate) isPaidActive = false;
 
-        let shopUpi = s.upiId || 'merchant@upi';
-        let upiLink = `upi://pay?pa=${shopUpi}&pn=${encodeURIComponent(s.shopName)}&am=${payableToShop}&cu=INR`;
-        let qrCodeImg = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiLink)}`;
+        let masterQr = localStorage.getItem('master_qr_img') || 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=MasterUPI';
 
         return `
           <div class="card-box">
@@ -501,8 +515,7 @@
             </div>
 
             <div style="margin-top:6px; display:flex; gap:6px; align-items:center;">
-              <a href="${upiLink}" class="btn btn-upi" style="flex:1; padding:8px;">📱 ಪೇಮೆಂಟ್ ಮಾಡಿ (₹${payableToShop})</a>
-              <button class="btn btn-success" onclick="openQRModal('${qrCodeImg}', '${payableToShop}', 'ಅಂಗಡಿ ಮಾಲೀಕ')" style="padding:8px;">ಕ್ಯೂಆರ್ ಕೋಡ್</button>
+              <button class="btn btn-success" onclick="openQRModal('${masterQr}', '${payableToShop}', 'ಮಾಸ್ಟರ್ ಕ್ಯೂಆರ್ ಕೋಡ್')" style="flex:1; padding:8px;">📱 ಮಾಸ್ಟರ್ ಕ್ಯೂಆರ್ ಕೋಡ್ (₹${payableToShop})</button>
             </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
@@ -539,6 +552,8 @@
         return;
       }
 
+      let masterQr = localStorage.getItem('master_qr_img') || 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=MasterUPI';
+
       container.innerHTML = list.map(db => {
         let deliveredCount = allOrders.filter(o => o.status === 'DELIVERED' || o.status === 'STEP_4').length;
         let totalDboyEarnings = 0;
@@ -549,10 +564,6 @@
             else { totalDboyEarnings += 100 + Math.round((orderAmt - 1000) * 0.10); }
           }
         });
-
-        let dboyUpi = db.upiId || 'delivery@upi';
-        let upiLink = `upi://pay?pa=${dboyUpi}&pn=${encodeURIComponent(db.name)}&am=${totalDboyEarnings}&cu=INR`;
-        let qrCodeImg = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiLink)}`;
 
         return `
           <div class="card-box">
@@ -569,8 +580,7 @@
             </div>
 
             <div style="margin-top:8px; display:flex; gap:6px; align-items:center;">
-              <a href="${upiLink}" class="btn btn-upi" style="flex:1; padding:8px;">📱 ಪೇಮೆಂಟ್ ಮಾಡಿ (₹${totalDboyEarnings})</a>
-              <button class="btn btn-success" onclick="openQRModal('${qrCodeImg}', '${totalDboyEarnings}', 'ಡೆಲಿವರಿ ಬಾಯ್')" style="padding:8px;">ಕ್ಯೂಆರ್ ಕೋಡ್</button>
+              <button class="btn btn-success" onclick="openQRModal('${masterQr}', '${totalDboyEarnings}', 'ಡೆಲಿವರಿ ಬಾಯ್ ಕ್ಯೂಆರ್ ಕೋಡ್')" style="flex:1; padding:8px;">📱 ಮಾಸ್ಟರ್ ಕ್ಯೂಆರ್ ಕೋಡ್ (₹${totalDboyEarnings})</button>
             </div>
 
             <div style="text-align:right; margin-top:6px;">
@@ -624,10 +634,10 @@
         return;
       }
 
+      let masterQr = localStorage.getItem('master_qr_img') || 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=MasterUPI';
+
       container.innerHTML = returnOrders.map(o => {
         let isPaymentSuccess = o.returnPaymentStatus === 'SUCCESS';
-        let upiLink = `upi://pay?pa=merchant@upi&pn=NamahShapur&am=${o.totalPrice}&cu=INR`;
-        let qrCodeImg = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiLink)}`;
 
         return `
           <div class="card-box" style="border-left: 4px solid #d32f2f;">
@@ -643,8 +653,7 @@
             <div style="margin-top:8px; background:#fff3e0; padding:8px; border-radius:6px; font-size:0.78rem;">
               <p><b>ಸ್ಥಿತಿ:</b> ರಿಟರ್ನ್ ಆರ್ಡರ್ ಪೇಮೆಂಟ್ ಬಾಕಿ ಇದೆ.</p>
               <div style="margin-top:6px; display:flex; gap:6px; align-items:center;">
-                <a href="${upiLink}" class="btn btn-upi" style="flex:1; padding:8px;">📱 ರಿಟರ್ನ್ ಪೇಮೆಂಟ್ ಮಾಡಿ (₹${o.totalPrice})</a>
-                <button class="btn btn-success" onclick="openQRModal('${qrCodeImg}', '${o.totalPrice}', 'ರಿಟರ್ನ್ ಗ್ರಾಹಕ')" style="padding:8px;">ಕ್ಯೂಆರ್ ಕೋಡ್</button>
+                <button class="btn btn-success" onclick="openQRModal('${masterQr}', '${o.totalPrice}', 'ರಿಟರ್ನ್ ಪೇಮೆಂಟ್ ಕ್ಯೂಆರ್ ಕೋಡ್')" style="flex:1; padding:8px;">📱 ಮಾಸ್ಟರ್ ಕ್ಯೂಆರ್ ಕೋಡ್ (₹${o.totalPrice})</button>
               </div>
             </div>
 
@@ -676,10 +685,10 @@
     }
 
     function openQRModal(qrImgSrc, price, type) {
-      document.getElementById('modalTitle').innerText = `${type} ಪಾವತಿ ಕ್ಯೂಆರ್ ಕೋಡ್ (₹${price})`;
+      document.getElementById('modalTitle').innerText = `${type} (₹${price})`;
       document.getElementById('modalBodyContent').innerHTML = `
         <p style="font-size:0.8rem; margin-bottom:6px;">ಫೋನ್‌ಪೇ ಅಥವಾ ಗೂಗಲ್ ಪೇ ಮೂಲಕ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ ಪಾವತಿಸಿ:</p>
-        <img src="${qrImgSrc}" style="width:160px; height:160px; margin:10px auto; display:block; border:1px solid #ccc; border-radius:6px;">
+        <img src="${qrImgSrc}" style="width:180px; height:180px; margin:10px auto; display:block; border:1px solid #ccc; border-radius:6px; object-fit:contain;">
       `;
       document.getElementById('downloadLink').href = qrImgSrc;
       document.getElementById('imageModal').style.display = 'flex';
