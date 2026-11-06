@@ -684,7 +684,7 @@
               <span style="font-size:0.75rem; font-weight:bold; color:${isPaymentSuccess ? 'var(--success)' : '#d32f2f'};">
                 ${isPaymentSuccess ? '✅ ಪಾವತಿ ಸಕ್ಸಸ್ ಆಗಿದೆ' : '⏳ ಪಾವತಿ ಪೆಂಡಿಂಗ್‌ನಲ್ಲಿದೆ'}
               </span>
-              ${!isPaymentSuccess ? `<button class="btn btn-success" onclick="markReturnPaymentSuccess('${o.id}')">ಪೇಮೆಂಟ್ ಸಕ್ಸಸ್ ಮಾಡಿ</button>` : ''}
+              {!isPaymentSuccess ? `<button class="btn btn-success" onclick="markReturnPaymentSuccess('${o.id}')">ಪೇಮೆಂಟ್ ಸಕ್ಸಸ್ ಮಾಡಿ</button>` : ''}
             </div>
           </div>
         `;
